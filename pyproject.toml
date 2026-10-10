@@ -1,0 +1,21 @@
+[project]
+name = "open-data-pipeline"
+version = "0.1.0"
+description = "A REST API for validating and processing CSV data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+open-data-pipeline = "open_data_pipeline:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
