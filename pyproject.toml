@@ -4,7 +4,15 @@ version = "0.1.0"
 description = "A REST API for validating and processing CSV data"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.143.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.0",
+    "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
+    "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
+]
 
 [project.scripts]
 open-data-pipeline = "open_data_pipeline:main"
@@ -15,6 +23,9 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "alembic>=1.20.0",
+    "basedpyright>=1.40.2",
+    "httpx2>=2.13.1",
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "ruff>=0.17.0",
