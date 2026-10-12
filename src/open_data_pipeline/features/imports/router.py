@@ -8,8 +8,11 @@ from open_data_pipeline.features.imports.exceptions import (
     INVALID_FILE_EXCEPTION,
     InvalidFileException,
 )
-from open_data_pipeline.features.imports.schemas import ImportResponse
-from open_data_pipeline.features.imports.service import import_data
+from open_data_pipeline.features.imports.schemas import (
+    ImportPreviewResponse,
+    ImportResponse,
+)
+from open_data_pipeline.features.imports.service import import_data, import_data_preview
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -21,6 +24,20 @@ def import_data_endpoint(
 ) -> ImportResponse:
     try:
         return import_data(file=file, db=db)
+    except InvalidFileException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_EXCEPTION
+        )
+
+
+@router.post(
+    "/preview", response_model=ImportPreviewResponse, status_code=HTTPStatus.CREATED
+)
+def import_data_preview_endpoint(
+    db: Session = Depends(get_db), file: UploadFile = File(...)
+) -> ImportPreviewResponse:
+    try:
+        return import_data_preview(file=file, db=db)
     except InvalidFileException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_EXCEPTION
