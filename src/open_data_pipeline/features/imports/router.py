@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
+    INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
     INVALID_FILE_EXCEPTION,
     INVALID_FILE_HEADERS_EXCEPTION,
+    InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
 )
@@ -47,4 +49,9 @@ def import_data_preview_endpoint(
     except InvalidFileHeadersException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_HEADERS_EXCEPTION
+        )
+    except InvalidFileDuplicatedHeaderException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
         )

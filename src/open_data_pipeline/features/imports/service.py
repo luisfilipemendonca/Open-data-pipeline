@@ -9,6 +9,7 @@ from open_data_pipeline.features.imports.csv_reader import (
     save_upload_file,
 )
 from open_data_pipeline.features.imports.exceptions import (
+    InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
 )
@@ -44,9 +45,13 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
     file_key, file_path = save_upload_file(file)
     csv_headers = read_csv_headers(file_path)
 
-    if not csv_headers:
+    if not csv_headers or not all(csv_header.strip() for csv_header in csv_headers):
         file_path.unlink(missing_ok=True)
         raise InvalidFileHeadersException()
+
+    if len({csv_header.strip() for csv_header in csv_headers}) != len(csv_headers):
+        file_path.unlink(missing_ok=True)
+        raise InvalidFileDuplicatedHeaderException()
 
     csv_rows = import_csv(file_path)
 
