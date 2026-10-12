@@ -23,9 +23,10 @@ def read_csv_headers(file_path: Path) -> list[str]:
 TEMP_FILES_DIR = Path("tmp/imports")
 
 
-def save_upload_file(file: UploadFile) -> Path:
+def save_upload_file(file: UploadFile) -> tuple[str, Path]:
     TEMP_FILES_DIR.mkdir(parents=True, exist_ok=True)
-    file_path = TEMP_FILES_DIR / f"{uuid4()}.csv"
+    file_key = f"{uuid4()}.csv"
+    file_path = TEMP_FILES_DIR / file_key
 
     try:
         with open(file_path, "wb") as buffer:
@@ -34,4 +35,4 @@ def save_upload_file(file: UploadFile) -> Path:
         file_path.unlink(missing_ok=True)
         raise
 
-    return file_path
+    return file_key, file_path

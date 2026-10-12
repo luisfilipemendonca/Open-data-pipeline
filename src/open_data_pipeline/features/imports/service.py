@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
@@ -39,7 +41,7 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
     if not validate_file(file):
         raise InvalidFileException()
 
-    file_path = save_upload_file(file)
+    file_key, file_path = save_upload_file(file)
     csv_headers = read_csv_headers(file_path)
 
     if not csv_headers:
@@ -50,7 +52,11 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
 
     fields, rows = infer_fields(csv_headers, csv_rows)
 
-    import_record = Import(status=ImportStatus.ANALYZING)
+    import_record = Import(
+        status=ImportStatus.ANALYZING,
+        file_key=file_key,
+        file_name=Path(file.filename).name if file.filename else "",
+    )
     db.add(import_record)
     db.commit()
     db.refresh(import_record)
