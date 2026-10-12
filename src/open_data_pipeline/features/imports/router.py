@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
     INVALID_FILE_EXCEPTION,
+    INVALID_FILE_HEADERS_EXCEPTION,
     InvalidFileException,
+    InvalidFileHeadersException,
 )
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
@@ -41,4 +43,8 @@ def import_data_preview_endpoint(
     except InvalidFileException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_EXCEPTION
+        )
+    except InvalidFileHeadersException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_HEADERS_EXCEPTION
         )
