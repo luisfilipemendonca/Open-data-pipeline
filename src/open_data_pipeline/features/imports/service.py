@@ -53,7 +53,7 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
     fields, rows = infer_fields(csv_headers, csv_rows)
 
     import_record = Import(
-        status=ImportStatus.ANALYZING,
+        status=ImportStatus.PENDING,
         file_key=file_key,
         file_name=Path(file.filename).name if file.filename else "",
     )
@@ -66,5 +66,5 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
         status=import_record.status,
         fields=fields,
         rows=rows,
-        download_url="",
+        download_url=f"/api/imports/{import_record.id}/download",
     )
