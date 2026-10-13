@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from open_data_pipeline.features.imports.field_types import (
     FieldInferredType,
@@ -16,8 +16,12 @@ class ImportStatus(StrEnum):
 
 
 class ImportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     import_id: int
     status: ImportStatus
+    download_url: str
+    file_name: str
 
 
 class ImportPreviewField(BaseModel):
@@ -32,3 +36,16 @@ class ImportPreviewResponse(BaseModel):
     download_url: str
     fields: list[ImportPreviewField]
     rows: list[dict[str, str]]
+
+
+class PaginationResponse(BaseModel):
+    page: int
+    page_size: int
+    total_pages: int
+    has_next_page: bool
+    total: int
+
+
+class ImportsResponse(BaseModel):
+    data: list[ImportResponse]
+    pagination: PaginationResponse

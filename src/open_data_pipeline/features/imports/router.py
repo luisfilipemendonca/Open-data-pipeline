@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -18,10 +18,12 @@ from open_data_pipeline.features.imports.exceptions import (
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
+    ImportsResponse,
 )
 from open_data_pipeline.features.imports.service import (
     delete_import,
     download_import_file,
+    get_imports,
     import_data,
     import_data_preview,
 )
@@ -91,3 +93,12 @@ def delete_import_endpoint(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
         )
+
+
+@router.get("/", response_model=ImportsResponse)
+def get_imports_endpoint(
+    db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+) -> ImportsResponse:
+    return get_imports(db=db, page=page, page_size=page_size)

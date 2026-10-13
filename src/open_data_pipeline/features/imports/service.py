@@ -1,6 +1,8 @@
+from math import ceil
 from pathlib import Path
 
 from fastapi import UploadFile
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.features.imports.csv_reader import (
@@ -21,7 +23,9 @@ from open_data_pipeline.features.imports.models import Import
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
+    ImportsResponse,
     ImportStatus,
+    PaginationResponse,
 )
 
 
@@ -37,6 +41,8 @@ def import_data(file: UploadFile, db: Session) -> ImportResponse:
     return ImportResponse(
         import_id=import_record.id,
         status=import_record.status,
+        download_url="",
+        file_name="",
     )
 
 
@@ -108,3 +114,37 @@ def delete_import(import_id: int, db: Session) -> None:
 
     db.delete(import_record)
     db.commit()
+
+
+def get_imports(db: Session, page: int, page_size: int) -> ImportsResponse:
+    statement = (
+        select(Import)
+        .order_by(Import.created_at.desc(), Import.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    import_records = db.scalars(statement).all()
+
+    import_records_count = db.scalar(select(func.count()).select_from(Import)) or 0
+
+    total_pages = ceil(import_records_count / page_size)
+    has_next_page = total_pages > page
+
+    return ImportsResponse(
+        data=[
+            ImportResponse(
+                import_id=import_record.id,
+                status=import_record.status,
+                download_url=f"/api/imports/{import_record.id}/download",
+                file_name=import_record.file_name,
+            )
+            for import_record in import_records
+        ],
+        pagination=PaginationResponse(
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+            has_next_page=has_next_page,
+            total=import_records_count,
+        ),
+    )
