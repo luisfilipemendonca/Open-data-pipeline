@@ -4,11 +4,13 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.features.imports.csv_reader import (
+    TEMP_FILES_DIR,
     import_csv,
     read_csv_headers,
     save_upload_file,
 )
 from open_data_pipeline.features.imports.exceptions import (
+    ImportNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
@@ -73,3 +75,22 @@ def import_data_preview(file: UploadFile, db: Session) -> ImportPreviewResponse:
         rows=rows,
         download_url=f"/api/imports/{import_record.id}/download",
     )
+
+
+def download_import_file(import_id: int, db: Session) -> tuple[Path, str]:
+    import_record = db.get(Import, import_id)
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    base_dir = TEMP_FILES_DIR.resolve()
+    file_path = (base_dir / import_record.file_key).resolve()
+
+    if not file_path.is_relative_to(base_dir) or not file_path.is_file():
+        raise ImportNotFoundException()
+
+    file_name = (
+        import_record.file_name.replace("\r", "").replace("\n", "").replace('"', "")
+    )
+
+    return file_path, file_name

@@ -1,13 +1,16 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
+    IMPORT_NOT_FOUND_EXCEPTION,
     INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
     INVALID_FILE_EXCEPTION,
     INVALID_FILE_HEADERS_EXCEPTION,
+    ImportNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
@@ -16,7 +19,11 @@ from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
 )
-from open_data_pipeline.features.imports.service import import_data, import_data_preview
+from open_data_pipeline.features.imports.service import (
+    download_import_file,
+    import_data,
+    import_data_preview,
+)
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -55,3 +62,19 @@ def import_data_preview_endpoint(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
         )
+
+
+@router.get("/{import_id}/download")
+def download_import_file_endpoint(
+    db: Session = Depends(get_db),  # noqa: B008
+    import_id: int = Path(ge=1),
+) -> FileResponse:
+    try:
+        file_path, file_name = download_import_file(import_id=import_id, db=db)
+
+    except ImportNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
+        )
+
+    return FileResponse(path=file_path, filename=file_name, media_type="text/csv")
