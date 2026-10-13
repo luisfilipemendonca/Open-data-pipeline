@@ -36,3 +36,13 @@ def save_upload_file(file: UploadFile) -> tuple[str, Path]:
         raise
 
     return file_key, file_path
+
+
+def resolve_import_file_path(file_key: str) -> Path | None:
+    base_dir = TEMP_FILES_DIR.resolve()
+    file_path = (base_dir / file_key).resolve()
+
+    if not file_path.is_relative_to(base_dir) or not file_path.is_file():
+        return None
+
+    return file_path

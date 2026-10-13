@@ -20,6 +20,7 @@ from open_data_pipeline.features.imports.schemas import (
     ImportResponse,
 )
 from open_data_pipeline.features.imports.service import (
+    delete_import,
     download_import_file,
     import_data,
     import_data_preview,
@@ -78,3 +79,15 @@ def download_import_file_endpoint(
         )
 
     return FileResponse(path=file_path, filename=file_name, media_type="text/csv")
+
+
+@router.delete("/{import_id}", status_code=HTTPStatus.NO_CONTENT)
+def delete_import_endpoint(
+    db: Session = Depends(get_db), import_id: int = Path(ge=1)
+) -> None:
+    try:
+        delete_import(import_id=import_id, db=db)
+    except ImportNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
+        )

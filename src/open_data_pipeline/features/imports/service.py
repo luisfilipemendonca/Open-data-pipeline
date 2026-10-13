@@ -4,9 +4,9 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.features.imports.csv_reader import (
-    TEMP_FILES_DIR,
     import_csv,
     read_csv_headers,
+    resolve_import_file_path,
     save_upload_file,
 )
 from open_data_pipeline.features.imports.exceptions import (
@@ -83,10 +83,9 @@ def download_import_file(import_id: int, db: Session) -> tuple[Path, str]:
     if not import_record:
         raise ImportNotFoundException()
 
-    base_dir = TEMP_FILES_DIR.resolve()
-    file_path = (base_dir / import_record.file_key).resolve()
+    file_path = resolve_import_file_path(import_record.file_key)
 
-    if not file_path.is_relative_to(base_dir) or not file_path.is_file():
+    if not file_path:
         raise ImportNotFoundException()
 
     file_name = (
@@ -94,3 +93,18 @@ def download_import_file(import_id: int, db: Session) -> tuple[Path, str]:
     )
 
     return file_path, file_name
+
+
+def delete_import(import_id: int, db: Session) -> None:
+    import_record = db.get(Import, import_id)
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    file_path = resolve_import_file_path(import_record.file_key)
+
+    if file_path:
+        file_path.unlink(missing_ok=True)
+
+    db.delete(import_record)
+    db.commit()
