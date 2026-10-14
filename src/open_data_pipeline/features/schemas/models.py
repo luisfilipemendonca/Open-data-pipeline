@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from sqlalchemy import (
     Boolean,
+    DateTime,
     Enum,
     ForeignKey,
     Identity,
@@ -7,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -41,6 +45,17 @@ class Schema(Base):
 
     import_record: Mapped["Import | None"] = relationship(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
         back_populates="schema", uselist=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
 
