@@ -5,6 +5,7 @@ from fastapi import UploadFile
 from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
+from open_data_pipeline.api.schemas import PaginatedResponse, PaginationResponse
 from open_data_pipeline.features.imports.csv_reader import (
     CSV_MAX_ROWS_SIZE,
     import_csv,
@@ -27,9 +28,7 @@ from open_data_pipeline.features.imports.models import Import, ImportRow
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
-    ImportsResponse,
     ImportStatus,
-    PaginationResponse,
 )
 
 
@@ -120,7 +119,9 @@ def delete_import(import_id: int, db: Session) -> None:
     db.commit()
 
 
-def get_imports(db: Session, page: int, page_size: int) -> ImportsResponse:
+def get_imports(
+    db: Session, page: int, page_size: int
+) -> PaginatedResponse[ImportResponse]:
     statement = (
         select(Import)
         .order_by(Import.created_at.desc(), Import.id.desc())
@@ -134,7 +135,7 @@ def get_imports(db: Session, page: int, page_size: int) -> ImportsResponse:
     total_pages = ceil(import_records_count / page_size)
     has_next_page = total_pages > page
 
-    return ImportsResponse(
+    return PaginatedResponse(
         data=[
             ImportResponse(
                 import_id=import_record.id,

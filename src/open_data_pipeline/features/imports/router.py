@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, Upload
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from open_data_pipeline.api.schemas import PaginatedResponse
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
     IMPORT_ALREADY_PROCESSED_EXCEPTION,
@@ -24,7 +25,6 @@ from open_data_pipeline.features.imports.exceptions import (
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
-    ImportsResponse,
 )
 from open_data_pipeline.features.imports.service import (
     delete_import,
@@ -102,12 +102,12 @@ def delete_import_endpoint(
         )
 
 
-@router.get("/", response_model=ImportsResponse)
+@router.get("/", response_model=PaginatedResponse[ImportResponse])
 def get_imports_endpoint(
     db: Session = Depends(get_db),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
-) -> ImportsResponse:
+) -> PaginatedResponse[ImportResponse]:
     return get_imports(db=db, page=page, page_size=page_size)
 
 

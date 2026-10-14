@@ -36,16 +36,3 @@ class ImportPreviewResponse(BaseModel):
     download_url: str
     fields: list[ImportPreviewField]
     rows: list[dict[str, str]]
-
-
-class PaginationResponse(BaseModel):
-    page: int
-    page_size: int
-    total_pages: int
-    has_next_page: bool
-    total: int
-
-
-class ImportsResponse(BaseModel):
-    data: list[ImportResponse]
-    pagination: PaginationResponse

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -53,7 +54,7 @@ class SchemaFieldsResponse(BaseModel):
     required: bool
 
 
-class CreateSchemaResponse(BaseModel):
+class SchemaResponse(BaseModel):
     id: int
     parent_schema_id: int | None
     is_base: bool
@@ -62,3 +63,13 @@ class CreateSchemaResponse(BaseModel):
     name: str | None
     fields: list[SchemaFieldsResponse]
     import_record: ImportResponse | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class GetSchemaResponse(BaseModel):
+    id: int
+    name: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
