@@ -6,10 +6,16 @@ from sqlalchemy.orm import Session
 
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
+    IMPORT_ALREADY_PROCESSED_EXCEPTION,
+    IMPORT_FILE_NOT_FOUND_EXCEPTION,
+    IMPORT_FILE_TOO_BIG_EXCEPTION,
     IMPORT_NOT_FOUND_EXCEPTION,
     INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
     INVALID_FILE_EXCEPTION,
     INVALID_FILE_HEADERS_EXCEPTION,
+    ImportAlreadyProcessedException,
+    ImportFileNotFoundException,
+    ImportFileTooBigException,
     ImportNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
@@ -26,6 +32,7 @@ from open_data_pipeline.features.imports.service import (
     get_imports,
     import_data,
     import_data_preview,
+    process_import,
 )
 
 router = APIRouter(prefix="/imports", tags=["imports"])
@@ -102,3 +109,26 @@ def get_imports_endpoint(
     page_size: int = Query(default=10, ge=1, le=100),
 ) -> ImportsResponse:
     return get_imports(db=db, page=page, page_size=page_size)
+
+
+@router.post("/{import_id}/process", response_model=ImportResponse)
+def process_import_endpoint(db: Session = Depends(get_db), import_id: int = Path(ge=1)):
+    try:
+        import_record = process_import(db=db, import_id=import_id)
+        return import_record
+    except ImportNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
+        )
+    except ImportFileNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_FILE_NOT_FOUND_EXCEPTION
+        )
+    except ImportAlreadyProcessedException:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT, detail=IMPORT_ALREADY_PROCESSED_EXCEPTION
+        )
+    except ImportFileTooBigException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=IMPORT_FILE_TOO_BIG_EXCEPTION
+        )

@@ -2,16 +2,20 @@ from math import ceil
 from pathlib import Path
 
 from fastapi import UploadFile
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.features.imports.csv_reader import (
+    CSV_MAX_ROWS_SIZE,
     import_csv,
     read_csv_headers,
     resolve_import_file_path,
     save_upload_file,
 )
 from open_data_pipeline.features.imports.exceptions import (
+    ImportAlreadyProcessedException,
+    ImportFileNotFoundException,
+    ImportFileTooBigException,
     ImportNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
@@ -19,7 +23,7 @@ from open_data_pipeline.features.imports.exceptions import (
 )
 from open_data_pipeline.features.imports.field_inference import infer_fields
 from open_data_pipeline.features.imports.file_validator import validate_file
-from open_data_pipeline.features.imports.models import Import
+from open_data_pipeline.features.imports.models import Import, ImportRow
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewResponse,
     ImportResponse,
@@ -147,4 +151,50 @@ def get_imports(db: Session, page: int, page_size: int) -> ImportsResponse:
             has_next_page=has_next_page,
             total=import_records_count,
         ),
+    )
+
+
+def process_import(db: Session, import_id: int) -> ImportResponse:
+    has_rows_statement = exists().where(ImportRow.import_id == Import.id)
+    statement = select(Import, has_rows_statement).where(Import.id == import_id)
+
+    result = db.execute(statement).one_or_none()
+
+    if not result:
+        raise ImportNotFoundException()
+
+    import_record, has_import_rows = result
+
+    if has_import_rows or import_record.status != ImportStatus.PENDING:
+        raise ImportAlreadyProcessedException()
+
+    file_path = resolve_import_file_path(import_record.file_key)
+
+    if not file_path:
+        raise ImportFileNotFoundException()
+
+    csv_rows = import_csv(file_path)
+
+    for index, csv_row in enumerate(csv_rows):
+        if index >= CSV_MAX_ROWS_SIZE - 1:
+            raise ImportFileTooBigException()
+
+        db.add(
+            ImportRow(
+                import_id=import_record.id,
+                row_number=index + 1,
+                data=csv_row,
+                is_valid=False,
+                errors=[],
+            )
+        )
+
+    db.commit()
+    db.refresh(import_record)
+
+    return ImportResponse(
+        import_id=import_record.id,
+        status=import_record.status,
+        download_url=f"/api/imports/{import_record.id}/download",
+        file_name=import_record.file_name,
     )
