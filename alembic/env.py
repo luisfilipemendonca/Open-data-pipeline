@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from open_data_pipeline.db.base import Base
 from open_data_pipeline.features.imports.models import Import
+from open_data_pipeline.features.schemas.models import Schema
 
 load_dotenv()
 

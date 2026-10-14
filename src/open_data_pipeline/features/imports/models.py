@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from open_data_pipeline.db.base import Base
 from open_data_pipeline.features.imports.schemas import ImportStatus
+from open_data_pipeline.features.schemas.models import Schema
 
 
 class Import(Base):
@@ -42,6 +43,13 @@ class Import(Base):
     rows: Mapped[list["ImportRow"]] = relationship(
         back_populates="import_record", passive_deletes=True
     )
+
+    schema_id: Mapped[int | None] = mapped_column(
+        ForeignKey(column="schemas.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
+    schema: Mapped["Schema | None"] = relationship(back_populates="import_record")
 
 
 class ImportRow(Base):
