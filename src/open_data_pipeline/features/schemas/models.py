@@ -3,9 +3,11 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +17,14 @@ from open_data_pipeline.features.imports.field_types import FieldInferredType
 
 class Schema(Base):
     __tablename__: str = "schemas"
+    __table_args__ = (
+        Index(
+            "uq_schemas_name_is_base",
+            "name",
+            unique=True,
+            postgresql_where=text("is_base"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     parent_schema_id: Mapped[int | None] = mapped_column(
