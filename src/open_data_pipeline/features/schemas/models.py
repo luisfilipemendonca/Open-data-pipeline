@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -17,6 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from open_data_pipeline.db.base import Base
 from open_data_pipeline.features.imports.field_types import FieldInferredType
+
+if TYPE_CHECKING:
+    from open_data_pipeline.features.imports.models import Import
 
 
 class Schema(Base):
@@ -43,7 +47,7 @@ class Schema(Base):
         back_populates="schema", passive_deletes=True
     )
 
-    import_record: Mapped["Import | None"] = relationship(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    import_record: Mapped["Import | None"] = relationship(
         back_populates="schema", uselist=False
     )
 

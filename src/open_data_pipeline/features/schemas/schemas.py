@@ -4,7 +4,10 @@ from typing import Self
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from open_data_pipeline.features.imports.field_types import FieldInferredType
-from open_data_pipeline.features.imports.schemas import ImportResponse
+from open_data_pipeline.features.imports.schemas import (
+    ImportPreviewField,
+    ImportResponse,
+)
 
 
 class CreateSchemaFieldRequest(BaseModel):
@@ -73,3 +76,22 @@ class GetSchemaResponse(BaseModel):
     version: int
     created_at: datetime
     updated_at: datetime
+
+
+class DetailsSchemaResponse(BaseModel):
+    id: int
+    name: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    outdated_count: int
+    fields: list[ImportPreviewField]
+
+
+class OutdatedSchemaCopiesResponse(BaseModel):
+    id: int
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    import_id: int | None
+    import_file_name: str | None
