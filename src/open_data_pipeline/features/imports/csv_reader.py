@@ -20,7 +20,7 @@ def import_csv(file_path: Path) -> Iterator[dict[str, str]]:
 def read_csv_headers(file_path: Path) -> list[str]:
     with open(file_path, "r", encoding="utf-8", newline="") as file:
         reader = csv.DictReader(file)
-        return [name for name in (reader.fieldnames or [])]
+        return [name for name in (reader.fieldnames or []) if name.strip()]
 
 
 def save_upload_file(file: UploadFile) -> tuple[str, Path]:
