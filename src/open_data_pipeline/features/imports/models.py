@@ -22,6 +22,9 @@ from open_data_pipeline.features.schemas.models import Schema
 class Import(Base):
     __tablename__: str = "imports"
 
+    def __repr__(self) -> str:
+        return f"file_name: {self.file_name}\n schema: {self.schema}\n"
+
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     status: Mapped[ImportStatus] = mapped_column(
         Enum(ImportStatus, name="import_status"),
@@ -61,7 +64,7 @@ class ImportRow(Base):
     )
 
     def __repr__(self) -> str:
-        return f"row_number: {self.row_number}\n data: {self.data}\n"
+        return f"row_number: {self.row_number}\n data: {self.data}\n import: {self.import_record}\n"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     import_id: Mapped[int] = mapped_column(

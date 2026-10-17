@@ -19,7 +19,11 @@ from open_data_pipeline.features.imports.exceptions import (
     ImportFileTooBigException,
     ImportMissingSchemaException,
     ImportNotFoundException,
+    ImportRowFieldsMismatchSchemaException,
+    ImportRowNotFoundException,
+    ImportRowValidationException,
     ImportSchemaHeadersMismatchException,
+    ImportSchemaNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
@@ -28,11 +32,12 @@ from open_data_pipeline.features.imports.field_inference import infer_fields
 from open_data_pipeline.features.imports.file_validator import validate_file
 from open_data_pipeline.features.imports.models import Import, ImportRow, Schema
 from open_data_pipeline.features.imports.schemas import (
-    GetImportRowResponse,
     ImportPreviewResponse,
     ImportResponse,
     ImportRowDataResponse,
+    ImportRowResponse,
     ImportStatus,
+    UpdateImportRowBody,
 )
 from open_data_pipeline.features.imports.validator import validate_row_fields
 from open_data_pipeline.features.schemas.exceptions import NotFoundSchemaException
@@ -289,7 +294,7 @@ def process_import(db: Session, import_id: int) -> ImportResponse:
 
 def get_import_rows(
     db: Session, import_id: int, page: int, page_size: int, is_valid: bool | None
-) -> PaginatedResponse[GetImportRowResponse]:
+) -> PaginatedResponse[ImportRowResponse]:
     import_record = db.get(Import, import_id)
 
     if not import_record:
@@ -342,7 +347,7 @@ def get_import_rows(
 
     return PaginatedResponse(
         data=[
-            GetImportRowResponse(
+            ImportRowResponse(
                 id=import_row.id,
                 row_number=import_row.row_number,
                 data=import_data[index],
@@ -357,4 +362,85 @@ def get_import_rows(
             has_next_page=has_next_page,
             total=import_rows_count,
         ),
+    )
+
+
+def update_import_row(
+    db: Session, import_id: int, row_id: int, payload: list[UpdateImportRowBody]
+) -> ImportRowResponse:
+    import_row = (
+        db.scalars(
+            select(ImportRow)
+            .where(ImportRow.id == row_id, ImportRow.import_id == import_id)
+            .options(
+                joinedload(ImportRow.import_record)
+                .joinedload(Import.schema)
+                .joinedload(Schema.fields)
+            )
+        )
+        .unique()
+        .one_or_none()
+    )
+
+    if not import_row:
+        raise ImportRowNotFoundException()
+
+    if not import_row.import_record.schema:
+        raise ImportSchemaNotFoundException()
+
+    schema_fields = import_row.import_record.schema.fields
+
+    if len(schema_fields) != len(payload):
+        raise ImportRowFieldsMismatchSchemaException()
+
+    schema_validator_fields = [
+        SchemaFieldValidator(
+            name=field.name, field_type=field.field_type, required=field.required
+        )
+        for field in schema_fields
+    ]
+
+    data_dict = {dict.column: dict.value for dict in payload}
+
+    for schema_field in schema_fields:
+        if not schema_field.name in data_dict:
+            raise ImportRowFieldsMismatchSchemaException()
+
+    is_valid, errors = validate_row_fields(
+        row=data_dict, fields=schema_validator_fields
+    )
+
+    if not is_valid:
+        raise ImportRowValidationException(errors)
+
+    import_row.data = data_dict
+    import_row.errors = []
+    import_row.is_valid = True
+
+    has_invalid_rows = db.scalar(
+        select(
+            exists().where(
+                ImportRow.import_id == import_id,
+                ImportRow.is_valid == False,
+                ImportRow.id != import_row.id,
+            )
+        )
+    )
+
+    import_row.import_record.status = (
+        ImportStatus.COMPLETED_WITH_ERRORS
+        if has_invalid_rows
+        else ImportStatus.COMPLETED
+    )
+
+    db.commit()
+
+    return ImportRowResponse(
+        id=import_row.id,
+        row_number=import_row.row_number,
+        data=[
+            ImportRowDataResponse(column=column, value=value, error=None)
+            for column, value in import_row.data.items()
+        ],
+        is_valid=True,
     )

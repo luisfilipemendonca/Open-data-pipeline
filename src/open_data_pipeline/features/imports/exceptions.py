@@ -1,4 +1,5 @@
 from open_data_pipeline.features.imports.csv_reader import CSV_MAX_ROWS_SIZE
+from open_data_pipeline.features.imports.schemas import ImportRowError
 
 INVALID_FILE_EXCEPTION = "Invalid file extension"
 INVALID_FILE_HEADERS_EXCEPTION = "Invalid file headers"
@@ -11,6 +12,9 @@ IMPORT_FILE_TOO_BIG_EXCEPTION = (
 )
 IMPORT_MISSING_SCHEMA_EXCEPTION = "Missing schema in import"
 IMPORT_SCHEMA_HEADERS_MISMATCH = "Schema fields don't match file headers"
+IMPORT_ROW_NOT_FOUND_EXCEPTION = "Import row not found"
+IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION = "Import row fields mismatch the schema"
+IMPORT_SCHEMA_NOT_FOUND = "Import schema not found"
 
 
 class InvalidFileException(Exception): ...
@@ -38,3 +42,19 @@ class ImportMissingSchemaException(Exception): ...
 
 
 class ImportSchemaHeadersMismatchException(Exception): ...
+
+
+class ImportRowNotFoundException(Exception): ...
+
+
+class ImportRowFieldsMismatchSchemaException(Exception): ...
+
+
+class ImportRowValidationException(Exception):
+    def __init__(self, errors: list[ImportRowError]) -> None:
+        super().__init__()
+
+        self.errors: list[ImportRowError] = errors
+
+
+class ImportSchemaNotFoundException(Exception): ...

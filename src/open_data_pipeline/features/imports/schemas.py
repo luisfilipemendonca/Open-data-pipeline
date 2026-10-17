@@ -51,8 +51,13 @@ class ImportRowDataResponse(BaseModel):
     error: str | None
 
 
-class GetImportRowResponse(BaseModel):
+class ImportRowResponse(BaseModel):
     id: int
     row_number: int
     data: list[ImportRowDataResponse]
     is_valid: bool
+
+
+class UpdateImportRowBody(BaseModel):
+    column: str
+    value: str

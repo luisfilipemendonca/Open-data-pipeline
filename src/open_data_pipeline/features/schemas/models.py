@@ -34,6 +34,9 @@ class Schema(Base):
         ),
     )
 
+    def __repr__(self) -> str:
+        return f"schema_id: {self.id} - schema_name: {self.name}\n"
+
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     parent_schema_id: Mapped[int | None] = mapped_column(
         ForeignKey(column="schemas.id", ondelete="RESTRICT"), nullable=True, index=True

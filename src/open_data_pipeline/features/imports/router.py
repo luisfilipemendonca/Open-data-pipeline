@@ -21,7 +21,10 @@ from open_data_pipeline.features.imports.exceptions import (
     IMPORT_FILE_TOO_BIG_EXCEPTION,
     IMPORT_MISSING_SCHEMA_EXCEPTION,
     IMPORT_NOT_FOUND_EXCEPTION,
+    IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION,
+    IMPORT_ROW_NOT_FOUND_EXCEPTION,
     IMPORT_SCHEMA_HEADERS_MISMATCH,
+    IMPORT_SCHEMA_NOT_FOUND,
     INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
     INVALID_FILE_EXCEPTION,
     INVALID_FILE_HEADERS_EXCEPTION,
@@ -30,15 +33,20 @@ from open_data_pipeline.features.imports.exceptions import (
     ImportFileTooBigException,
     ImportMissingSchemaException,
     ImportNotFoundException,
+    ImportRowFieldsMismatchSchemaException,
+    ImportRowNotFoundException,
+    ImportRowValidationException,
     ImportSchemaHeadersMismatchException,
+    ImportSchemaNotFoundException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
 )
 from open_data_pipeline.features.imports.schemas import (
-    GetImportRowResponse,
     ImportPreviewResponse,
     ImportResponse,
+    ImportRowResponse,
+    UpdateImportRowBody,
 )
 from open_data_pipeline.features.imports.service import (
     delete_import,
@@ -48,6 +56,7 @@ from open_data_pipeline.features.imports.service import (
     import_data,
     import_data_preview,
     process_import,
+    update_import_row,
 )
 from open_data_pipeline.features.schemas.exceptions import (
     NOT_FOUND_SCHEMA_EXCEPTION,
@@ -170,14 +179,14 @@ def process_import_endpoint(db: Session = Depends(get_db), import_id: int = Path
         )
 
 
-@router.get("/{import_id}/rows", response_model=PaginatedResponse[GetImportRowResponse])
+@router.get("/{import_id}/rows", response_model=PaginatedResponse[ImportRowResponse])
 def get_import_rows_endpoint(
     db: Session = Depends(get_db),
     import_id: int = Path(ge=1),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     is_valid: bool | None = Query(default=None),
-) -> PaginatedResponse[GetImportRowResponse]:
+) -> PaginatedResponse[ImportRowResponse]:
     try:
         return get_import_rows(
             db=db,
@@ -189,4 +198,35 @@ def get_import_rows_endpoint(
     except ImportNotFoundException:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
+        )
+
+
+@router.put("/{import_id}/rows/{row_id}", response_model=ImportRowResponse)
+def update_import_row_endpoint(
+    payload: list[UpdateImportRowBody],
+    db: Session = Depends(get_db),
+    import_id: int = Path(ge=1),
+    row_id: int = Path(ge=1),
+) -> ImportRowResponse:
+    try:
+        return update_import_row(
+            db=db, import_id=import_id, row_id=row_id, payload=payload
+        )
+    except ImportRowValidationException as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=[error.model_dump() for error in exc.errors],
+        )
+    except ImportRowFieldsMismatchSchemaException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION,
+        )
+    except ImportSchemaNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_SCHEMA_NOT_FOUND
+        )
+    except ImportRowNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_ROW_NOT_FOUND_EXCEPTION
         )
