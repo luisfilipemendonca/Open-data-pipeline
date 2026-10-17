@@ -9,6 +9,8 @@ IMPORT_FILE_NOT_FOUND_EXCEPTION = "Import file not found"
 IMPORT_FILE_TOO_BIG_EXCEPTION = (
     f"Import file needs to have under {CSV_MAX_ROWS_SIZE} rows"
 )
+IMPORT_MISSING_SCHEMA_EXCEPTION = "Missing schema in import"
+IMPORT_SCHEMA_HEADERS_MISMATCH = "Schema fields don't match file headers"
 
 
 class InvalidFileException(Exception): ...
@@ -30,3 +32,9 @@ class ImportFileNotFoundException(Exception): ...
 
 
 class ImportFileTooBigException(Exception): ...
+
+
+class ImportMissingSchemaException(Exception): ...
+
+
+class ImportSchemaHeadersMismatchException(Exception): ...

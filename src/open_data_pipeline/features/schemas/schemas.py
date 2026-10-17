@@ -50,6 +50,12 @@ class CreateSchemaRequest(BaseModel):
         return self
 
 
+class SchemaFieldValidator(BaseModel):
+    name: str
+    field_type: FieldInferredType
+    required: bool
+
+
 class SchemaFieldsResponse(BaseModel):
     id: int
     name: str

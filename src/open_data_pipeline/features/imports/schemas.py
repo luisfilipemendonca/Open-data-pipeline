@@ -8,10 +8,10 @@ from open_data_pipeline.features.imports.field_types import (
 
 
 class ImportStatus(StrEnum):
-    ANALYZING = "analyzing"
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
+    COMPLETED_WITH_ERRORS = "completed_with_errors"
     FAILED = "failed"
 
 
@@ -38,3 +38,8 @@ class ImportPreviewResponse(BaseModel):
     download_url: str
     fields: list[ImportPreviewField]
     rows: list[dict[str, str]]
+
+
+class ImportRowError(BaseModel):
+    column: str
+    reason: str

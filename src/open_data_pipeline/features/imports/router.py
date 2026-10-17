@@ -1,6 +1,15 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    Query,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -10,14 +19,18 @@ from open_data_pipeline.features.imports.exceptions import (
     IMPORT_ALREADY_PROCESSED_EXCEPTION,
     IMPORT_FILE_NOT_FOUND_EXCEPTION,
     IMPORT_FILE_TOO_BIG_EXCEPTION,
+    IMPORT_MISSING_SCHEMA_EXCEPTION,
     IMPORT_NOT_FOUND_EXCEPTION,
+    IMPORT_SCHEMA_HEADERS_MISMATCH,
     INVALID_FILE_DUPLICATED_HEADER_EXCEPTION,
     INVALID_FILE_EXCEPTION,
     INVALID_FILE_HEADERS_EXCEPTION,
     ImportAlreadyProcessedException,
     ImportFileNotFoundException,
     ImportFileTooBigException,
+    ImportMissingSchemaException,
     ImportNotFoundException,
+    ImportSchemaHeadersMismatchException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
@@ -34,20 +47,41 @@ from open_data_pipeline.features.imports.service import (
     import_data_preview,
     process_import,
 )
+from open_data_pipeline.features.schemas.exceptions import (
+    NOT_FOUND_SCHEMA_EXCEPTION,
+    NotFoundSchemaException,
+)
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
 
 @router.post("/", response_model=ImportResponse, status_code=HTTPStatus.ACCEPTED)
 def import_data_endpoint(
+    schema_id: int = Form(),
     file: UploadFile = File(...),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
 ) -> ImportResponse:
     try:
-        return import_data(file=file, db=db)
+        return import_data(file=file, db=db, schema_id=schema_id)
     except InvalidFileException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=INVALID_FILE_EXCEPTION
+        )
+    except ImportMissingSchemaException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=IMPORT_MISSING_SCHEMA_EXCEPTION
+        )
+    except NotFoundSchemaException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=NOT_FOUND_SCHEMA_EXCEPTION
+        )
+    except ImportSchemaHeadersMismatchException:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT, detail=IMPORT_SCHEMA_HEADERS_MISMATCH
+        )
+    except ImportFileTooBigException:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=IMPORT_FILE_TOO_BIG_EXCEPTION
         )
 
 
