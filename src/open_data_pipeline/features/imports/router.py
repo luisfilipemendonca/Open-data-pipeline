@@ -50,6 +50,7 @@ from open_data_pipeline.features.imports.schemas import (
 )
 from open_data_pipeline.features.imports.service import (
     delete_import,
+    delete_import_row,
     download_import_file,
     get_import_rows,
     get_imports,
@@ -226,6 +227,18 @@ def update_import_row_endpoint(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_SCHEMA_NOT_FOUND
         )
+    except ImportRowNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_ROW_NOT_FOUND_EXCEPTION
+        )
+
+
+@router.delete("/{import_id}/rows/{row_id}", status_code=HTTPStatus.NO_CONTENT)
+def delete_import_row_endpoint(
+    db: Session = Depends(get_db), import_id: int = Path(ge=1), row_id: int = Path(ge=1)
+) -> None:
+    try:
+        delete_import_row(db=db, import_id=import_id, row_id=row_id)
     except ImportRowNotFoundException:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_ROW_NOT_FOUND_EXCEPTION

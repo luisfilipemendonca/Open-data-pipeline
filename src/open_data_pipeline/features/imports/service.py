@@ -452,3 +452,33 @@ def update_import_row(
         ],
         is_valid=True,
     )
+
+
+def delete_import_row(db: Session, import_id: int, row_id: int) -> None:
+    import_row = db.scalar(
+        select(ImportRow).where(
+            ImportRow.id == row_id, ImportRow.import_id == import_id
+        )
+    )
+
+    if not import_row:
+        raise ImportRowNotFoundException()
+
+    has_invalid_rows = db.scalar(
+        select(
+            exists().where(
+                ImportRow.id != import_row.id,
+                ImportRow.import_id == import_row.import_id,
+                ImportRow.is_valid == False,
+            )
+        )
+    )
+
+    import_row.import_record.status = (
+        ImportStatus.COMPLETED_WITH_ERRORS
+        if has_invalid_rows
+        else ImportStatus.COMPLETED
+    )
+
+    db.delete(import_row)
+    db.commit()
