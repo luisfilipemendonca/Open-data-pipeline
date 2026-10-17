@@ -86,8 +86,12 @@ def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse
             if index >= CSV_MAX_ROWS_SIZE - 1:
                 raise ImportFileTooBigException()
 
+            processed_csv_row = {
+                key: value for key, value in csv_row.items() if key and key.strip()
+            }
+
             is_valid, errors = validate_row_fields(
-                row=csv_row, fields=schema_validator_fields
+                row=processed_csv_row, fields=schema_validator_fields
             )
 
             if not is_valid:
@@ -96,7 +100,7 @@ def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse
             rows.append(
                 ImportRow(
                     row_number=index + 1,
-                    data=csv_row,
+                    data=processed_csv_row,
                     is_valid=is_valid,
                     errors=[error.model_dump() for error in errors],
                 )
@@ -271,11 +275,15 @@ def process_import(db: Session, import_id: int) -> ImportResponse:
         if index >= CSV_MAX_ROWS_SIZE - 1:
             raise ImportFileTooBigException()
 
+        processed_csv_row = {
+            key: value for key, value in csv_row.items() if key and key.strip()
+        }
+
         db.add(
             ImportRow(
                 import_id=import_record.id,
                 row_number=index + 1,
-                data=csv_row,
+                data=processed_csv_row,
                 is_valid=False,
                 errors=[],
             )
