@@ -28,8 +28,10 @@ from open_data_pipeline.features.imports.field_inference import infer_fields
 from open_data_pipeline.features.imports.file_validator import validate_file
 from open_data_pipeline.features.imports.models import Import, ImportRow, Schema
 from open_data_pipeline.features.imports.schemas import (
+    GetImportRowResponse,
     ImportPreviewResponse,
     ImportResponse,
+    ImportRowDataResponse,
     ImportStatus,
 )
 from open_data_pipeline.features.imports.validator import validate_row_fields
@@ -282,4 +284,77 @@ def process_import(db: Session, import_id: int) -> ImportResponse:
         status=import_record.status,
         download_url=f"/api/imports/{import_record.id}/download",
         file_name=import_record.file_name,
+    )
+
+
+def get_import_rows(
+    db: Session, import_id: int, page: int, page_size: int, is_valid: bool | None
+) -> PaginatedResponse[GetImportRowResponse]:
+    import_record = db.get(Import, import_id)
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    conditions = [ImportRow.import_id == import_id]
+
+    if is_valid is not None:
+        conditions.append(ImportRow.is_valid == is_valid)
+
+    import_rows_statement = (
+        select(ImportRow)
+        .where(*conditions)
+        .order_by(ImportRow.row_number)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+
+    import_rows = db.scalars(import_rows_statement).all()
+
+    import_rows_count = (
+        db.scalar(select(func.count()).select_from(ImportRow).where(*conditions)) or 0
+    )
+
+    import_data: list[list[ImportRowDataResponse]] = []
+
+    while len(import_data) < len(import_rows):
+        import_data.append([])
+
+    for index, row in enumerate(import_rows):
+        for column, value in row.data.items():
+            if not column:
+                # empty values are being stored, need to inspect the import
+                continue
+
+            column_error = next(
+                (error for error in row.errors if error["column"] == column), None
+            )
+
+            import_data[index].append(
+                ImportRowDataResponse(
+                    column=column,
+                    value=value,
+                    error=column_error["reason"] if column_error else None,
+                )
+            )
+
+    total_pages = ceil(import_rows_count / page_size)
+    has_next_page = page < total_pages
+
+    return PaginatedResponse(
+        data=[
+            GetImportRowResponse(
+                id=import_row.id,
+                row_number=import_row.row_number,
+                data=import_data[index],
+                is_valid=import_row.is_valid,
+            )
+            for index, import_row in enumerate(import_rows)
+        ],
+        pagination=PaginationResponse(
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+            has_next_page=has_next_page,
+            total=import_rows_count,
+        ),
     )

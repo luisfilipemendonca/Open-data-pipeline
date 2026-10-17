@@ -60,6 +60,9 @@ class ImportRow(Base):
         ),
     )
 
+    def __repr__(self) -> str:
+        return f"row_number: {self.row_number}\n data: {self.data}\n"
+
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     import_id: Mapped[int] = mapped_column(
         ForeignKey("imports.id", ondelete="CASCADE"), nullable=False, index=True

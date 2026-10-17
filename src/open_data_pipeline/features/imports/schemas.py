@@ -43,3 +43,16 @@ class ImportPreviewResponse(BaseModel):
 class ImportRowError(BaseModel):
     column: str
     reason: str
+
+
+class ImportRowDataResponse(BaseModel):
+    column: str
+    value: str
+    error: str | None
+
+
+class GetImportRowResponse(BaseModel):
+    id: int
+    row_number: int
+    data: list[ImportRowDataResponse]
+    is_valid: bool

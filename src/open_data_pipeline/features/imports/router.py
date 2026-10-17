@@ -36,12 +36,14 @@ from open_data_pipeline.features.imports.exceptions import (
     InvalidFileHeadersException,
 )
 from open_data_pipeline.features.imports.schemas import (
+    GetImportRowResponse,
     ImportPreviewResponse,
     ImportResponse,
 )
 from open_data_pipeline.features.imports.service import (
     delete_import,
     download_import_file,
+    get_import_rows,
     get_imports,
     import_data,
     import_data_preview,
@@ -165,4 +167,26 @@ def process_import_endpoint(db: Session = Depends(get_db), import_id: int = Path
     except ImportFileTooBigException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=IMPORT_FILE_TOO_BIG_EXCEPTION
+        )
+
+
+@router.get("/{import_id}/rows", response_model=PaginatedResponse[GetImportRowResponse])
+def get_import_rows_endpoint(
+    db: Session = Depends(get_db),
+    import_id: int = Path(ge=1),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    is_valid: bool | None = Query(default=None),
+) -> PaginatedResponse[GetImportRowResponse]:
+    try:
+        return get_import_rows(
+            db=db,
+            import_id=import_id,
+            page=page,
+            page_size=page_size,
+            is_valid=is_valid,
+        )
+    except ImportNotFoundException:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail=IMPORT_NOT_FOUND_EXCEPTION
         )
