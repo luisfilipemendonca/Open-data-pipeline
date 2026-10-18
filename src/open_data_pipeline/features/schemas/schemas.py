@@ -8,12 +8,17 @@ from open_data_pipeline.features.imports.schemas import (
     ImportPreviewField,
     ImportResponse,
 )
+from open_data_pipeline.features.schemas.field_validations_validator import (
+    CreateSchemaFieldValidation,
+    validate_validations,
+)
 
 
 class CreateSchemaFieldRequest(BaseModel):
     name: str
     field_type: FieldInferredType
     required: bool = False
+    validations: list[CreateSchemaFieldValidation] | None = None
 
     @field_validator("name")
     @classmethod
@@ -24,6 +29,20 @@ class CreateSchemaFieldRequest(BaseModel):
             raise ValueError("Field name cannot be empty")
 
         return stripped
+
+    @model_validator(mode="after")
+    def validations_must_match_field_type(self) -> Self:
+        if not self.validations:
+            return self
+
+        is_valid, error_message = validate_validations(
+            field_type=self.field_type, validations=self.validations
+        )
+
+        if not is_valid:
+            raise ValueError(error_message)
+
+        return self
 
 
 class CreateSchemaRequest(BaseModel):

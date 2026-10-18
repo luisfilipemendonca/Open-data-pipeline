@@ -14,6 +14,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from open_data_pipeline.db.base import Base
@@ -85,3 +86,5 @@ class SchemaField(Base):
     required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     schema: Mapped["Schema"] = relationship(back_populates="fields")
+
+    validations: Mapped[dict[str, int] | None] = mapped_column(JSONB, nullable=True)
