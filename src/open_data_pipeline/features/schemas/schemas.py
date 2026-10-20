@@ -8,7 +8,7 @@ from open_data_pipeline.features.imports.schemas import (
     ImportPreviewField,
     ImportResponse,
 )
-from open_data_pipeline.features.schemas.field_validations_validator import (
+from open_data_pipeline.features.schemas.validations import (
     CreateSchemaFieldValidation,
     validate_validations,
 )

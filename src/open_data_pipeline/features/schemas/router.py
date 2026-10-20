@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Path
-from sqlalchemy.orm import Session
+from typing import Annotated
 
-from open_data_pipeline.api.pagination import PaginationDep
+from fastapi import APIRouter, Path
+
+from open_data_pipeline.api.dependencies import DbDep, PaginationDep
 from open_data_pipeline.api.schemas import PaginatedResponse
-from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.schemas.schemas import (
     CreateSchemaRequest,
     DetailsSchemaResponse,
@@ -22,23 +22,21 @@ router = APIRouter(prefix="/schemas", tags=["schemas"])
 
 
 @router.post(path="/", response_model=SchemaResponse)
-def create_schema_endpoint(
-    payload: CreateSchemaRequest, db: Session = Depends(get_db)
-) -> SchemaResponse:
+def create_schema_endpoint(payload: CreateSchemaRequest, db: DbDep) -> SchemaResponse:
     return create_schema(db=db, payload=payload)
 
 
 @router.get(path="/", response_model=PaginatedResponse[GetSchemaResponse])
 def get_schemas_endpoint(
     pagination: PaginationDep,
-    db: Session = Depends(get_db),
+    db: DbDep,
 ) -> PaginatedResponse[GetSchemaResponse]:
     return get_schemas(db=db, page=pagination.page, page_size=pagination.page_size)
 
 
 @router.get("/{schema_id}", response_model=DetailsSchemaResponse)
 def get_schema_details_endpoint(
-    db: Session = Depends(get_db), schema_id: int = Path(ge=1)
+    db: DbDep, schema_id: Annotated[int, Path(ge=1)]
 ) -> DetailsSchemaResponse:
     return get_schema_details(db=db, schema_id=schema_id)
 
@@ -49,8 +47,8 @@ def get_schema_details_endpoint(
 )
 def get_schema_outdated_copies_endpoint(
     pagination: PaginationDep,
-    db: Session = Depends(get_db),
-    schema_id: int = Path(ge=1),
+    db: DbDep,
+    schema_id: Annotated[int, Path(ge=1)],
 ) -> PaginatedResponse[OutdatedSchemaCopiesResponse]:
     return get_schema_outdated_copies(
         db=db,

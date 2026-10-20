@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, Query
+from fastapi import Query
 
 from open_data_pipeline.api.schemas import PaginationParams
 
@@ -12,6 +12,3 @@ def get_pagination(
     page_size: Annotated[int, Query(ge=1, le=100)] = DEFAULT_PAGE_SIZE,
 ) -> PaginationParams:
     return PaginationParams(page=page, page_size=page_size)
-
-
-PaginationDep = Annotated[PaginationParams, Depends(get_pagination)]
