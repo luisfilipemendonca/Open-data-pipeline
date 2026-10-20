@@ -12,3 +12,8 @@ class PaginationResponse(BaseModel):
 class PaginatedResponse[T](BaseModel):
     data: list[T]
     pagination: PaginationResponse
+
+
+class PaginationParams(BaseModel):
+    page: int
+    page_size: int

@@ -13,6 +13,7 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from open_data_pipeline.api.pagination import PaginationDep
 from open_data_pipeline.api.schemas import PaginatedResponse
 from open_data_pipeline.db.session import get_db
 from open_data_pipeline.features.imports.exceptions import (
@@ -150,11 +151,10 @@ def delete_import_endpoint(
 
 @router.get("/", response_model=PaginatedResponse[ImportResponse])
 def get_imports_endpoint(
+    pagination: PaginationDep,
     db: Session = Depends(get_db),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100),
 ) -> PaginatedResponse[ImportResponse]:
-    return get_imports(db=db, page=page, page_size=page_size)
+    return get_imports(db=db, page=pagination.page, page_size=pagination.page_size)
 
 
 @router.post("/{import_id}/process", response_model=ImportResponse)
@@ -182,18 +182,17 @@ def process_import_endpoint(db: Session = Depends(get_db), import_id: int = Path
 
 @router.get("/{import_id}/rows", response_model=PaginatedResponse[ImportRowResponse])
 def get_import_rows_endpoint(
+    pagination: PaginationDep,
     db: Session = Depends(get_db),
     import_id: int = Path(ge=1),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100),
     is_valid: bool | None = Query(default=None),
 ) -> PaginatedResponse[ImportRowResponse]:
     try:
         return get_import_rows(
             db=db,
             import_id=import_id,
-            page=page,
-            page_size=page_size,
+            page=pagination.page,
+            page_size=pagination.page_size,
             is_valid=is_valid,
         )
     except ImportNotFoundException:
