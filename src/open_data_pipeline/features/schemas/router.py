@@ -1,15 +1,9 @@
-from http import HTTPStatus
-
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
 from open_data_pipeline.api.pagination import PaginationDep
 from open_data_pipeline.api.schemas import PaginatedResponse
 from open_data_pipeline.db.session import get_db
-from open_data_pipeline.features.schemas.exceptions import (
-    NOT_FOUND_SCHEMA_EXCEPTION,
-    NotFoundSchemaException,
-)
 from open_data_pipeline.features.schemas.schemas import (
     CreateSchemaRequest,
     DetailsSchemaResponse,
@@ -46,13 +40,7 @@ def get_schemas_endpoint(
 def get_schema_details_endpoint(
     db: Session = Depends(get_db), schema_id: int = Path(ge=1)
 ) -> DetailsSchemaResponse:
-    try:
-        schema_details = get_schema_details(db=db, schema_id=schema_id)
-        return schema_details
-    except NotFoundSchemaException:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail=NOT_FOUND_SCHEMA_EXCEPTION
-        )
+    return get_schema_details(db=db, schema_id=schema_id)
 
 
 @router.get(
@@ -64,14 +52,9 @@ def get_schema_outdated_copies_endpoint(
     db: Session = Depends(get_db),
     schema_id: int = Path(ge=1),
 ) -> PaginatedResponse[OutdatedSchemaCopiesResponse]:
-    try:
-        return get_schema_outdated_copies(
-            db=db,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            schema_id=schema_id,
-        )
-    except NotFoundSchemaException:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail=NOT_FOUND_SCHEMA_EXCEPTION
-        )
+    return get_schema_outdated_copies(
+        db=db,
+        page=pagination.page,
+        page_size=pagination.page_size,
+        schema_id=schema_id,
+    )

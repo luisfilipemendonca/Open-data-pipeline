@@ -1,3 +1,6 @@
+from http import HTTPStatus
+
+from open_data_pipeline.api.exceptions import AppException
 from open_data_pipeline.features.imports.csv_reader import CSV_MAX_ROWS_SIZE
 from open_data_pipeline.features.imports.schemas import ImportRowError
 
@@ -17,37 +20,59 @@ IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION = "Import row fields mismatch the sc
 IMPORT_SCHEMA_NOT_FOUND = "Import schema not found"
 
 
-class InvalidFileException(Exception): ...
+class InvalidFileException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = INVALID_FILE_EXCEPTION
 
 
-class InvalidFileHeadersException(Exception): ...
+class InvalidFileHeadersException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = INVALID_FILE_HEADERS_EXCEPTION
 
 
-class InvalidFileDuplicatedHeaderException(Exception): ...
+class InvalidFileDuplicatedHeaderException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = INVALID_FILE_DUPLICATED_HEADER_EXCEPTION
 
 
-class ImportNotFoundException(Exception): ...
+class ImportNotFoundException(AppException):
+    status_code: HTTPStatus = HTTPStatus.NOT_FOUND
+    detail: str = IMPORT_NOT_FOUND_EXCEPTION
 
 
-class ImportAlreadyProcessedException(Exception): ...
+class ImportAlreadyProcessedException(AppException):
+    status_code: HTTPStatus = HTTPStatus.CONFLICT
+    detail: str = IMPORT_ALREADY_PROCESSED_EXCEPTION
 
 
-class ImportFileNotFoundException(Exception): ...
+class ImportFileNotFoundException(AppException):
+    status_code: HTTPStatus = HTTPStatus.NOT_FOUND
+    detail: str = IMPORT_FILE_NOT_FOUND_EXCEPTION
 
 
-class ImportFileTooBigException(Exception): ...
+class ImportFileTooBigException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = IMPORT_FILE_TOO_BIG_EXCEPTION
 
 
-class ImportMissingSchemaException(Exception): ...
+class ImportMissingSchemaException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = IMPORT_MISSING_SCHEMA_EXCEPTION
 
 
-class ImportSchemaHeadersMismatchException(Exception): ...
+class ImportSchemaHeadersMismatchException(AppException):
+    status_code: HTTPStatus = HTTPStatus.CONFLICT
+    detail: str = IMPORT_SCHEMA_HEADERS_MISMATCH
 
 
-class ImportRowNotFoundException(Exception): ...
+class ImportRowNotFoundException(AppException):
+    status_code: HTTPStatus = HTTPStatus.NOT_FOUND
+    detail: str = IMPORT_ROW_NOT_FOUND_EXCEPTION
 
 
-class ImportRowFieldsMismatchSchemaException(Exception): ...
+class ImportRowFieldsMismatchSchemaException(AppException):
+    status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
+    detail: str = IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION
 
 
 class ImportRowValidationException(Exception):
@@ -57,4 +82,6 @@ class ImportRowValidationException(Exception):
         self.errors: list[ImportRowError] = errors
 
 
-class ImportSchemaNotFoundException(Exception): ...
+class ImportSchemaNotFoundException(AppException):
+    status_code: HTTPStatus = HTTPStatus.NOT_FOUND
+    detail: str = IMPORT_SCHEMA_NOT_FOUND
