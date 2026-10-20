@@ -23,7 +23,15 @@ def create_schema(db: Session, payload: CreateSchemaRequest) -> SchemaResponse:
         is_base=True,
         fields=[
             SchemaField(
-                name=field.name, field_type=field.field_type, required=field.required
+                name=field.name,
+                field_type=field.field_type,
+                required=field.required,
+                validations={
+                    validation.validation_type: validation.validation_value
+                    for validation in field.validations
+                }
+                if field.validations
+                else None,
             )
             for field in payload.fields
         ],
