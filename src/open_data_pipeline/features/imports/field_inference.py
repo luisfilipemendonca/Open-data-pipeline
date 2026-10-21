@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 from open_data_pipeline.features.imports.field_types import (
     FIELD_TYPES_ORDER,
-    FieldInferredType,
+    FieldTypes,
     detect_field_type,
 )
 from open_data_pipeline.features.imports.schemas import ImportPreviewField
@@ -16,13 +16,13 @@ def infer_fields(
     fields: list[ImportPreviewField] = [
         ImportPreviewField(
             name=header,
-            inferred_type=FieldInferredType.STRING,
+            inferred_type=FieldTypes.STRING,
             required=True,
         )
         for header in headers
     ]
 
-    field_types_set: dict[str, set[FieldInferredType]] = {
+    field_types_set: dict[str, set[FieldTypes]] = {
         field.name: set() for field in fields
     }
 

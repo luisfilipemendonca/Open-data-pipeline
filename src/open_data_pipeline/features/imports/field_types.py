@@ -43,7 +43,7 @@ def _is_string(value: str) -> bool:
     return True
 
 
-class FieldInferredType(StrEnum):
+class FieldTypes(StrEnum):
     STRING = "string"
     INTEGER = "integer"
     DECIMAL = "decimal"
@@ -56,7 +56,7 @@ class FieldInferredType(StrEnum):
 @dataclass(frozen=True)
 class FieldTypeDetector:
     detector: Callable[[str], bool]
-    inferred_type: FieldInferredType
+    inferred_type: FieldTypes
 
 
 @dataclass(frozen=True)
@@ -65,47 +65,45 @@ class FieldTypeValidator:
     error_message: str
 
 
-FIELD_TYPE_VALIDATOR_MAP: dict[FieldInferredType, FieldTypeValidator] = {
-    FieldInferredType.INTEGER: FieldTypeValidator(
+FIELD_TYPE_VALIDATOR_MAP: dict[FieldTypes, FieldTypeValidator] = {
+    FieldTypes.INTEGER: FieldTypeValidator(
         validator=_is_integer, error_message="Field is not of integer type"
     ),
-    FieldInferredType.DECIMAL: FieldTypeValidator(
+    FieldTypes.DECIMAL: FieldTypeValidator(
         validator=_is_decimal_or_integer, error_message="Field is not of decimal type"
     ),
-    FieldInferredType.BOOLEAN: FieldTypeValidator(
+    FieldTypes.BOOLEAN: FieldTypeValidator(
         validator=_is_boolean, error_message="Field is not of boolean type"
     ),
-    FieldInferredType.STRING: FieldTypeValidator(
+    FieldTypes.STRING: FieldTypeValidator(
         validator=_is_string, error_message="Field is not of string type"
     ),
 }
 
 FIELD_TYPE_DETECTORS: list[FieldTypeDetector] = [
-    FieldTypeDetector(detector=_is_integer, inferred_type=FieldInferredType.INTEGER),
-    FieldTypeDetector(detector=_is_decimal, inferred_type=FieldInferredType.DECIMAL),
-    FieldTypeDetector(detector=_is_boolean, inferred_type=FieldInferredType.BOOLEAN),
+    FieldTypeDetector(detector=_is_integer, inferred_type=FieldTypes.INTEGER),
+    FieldTypeDetector(detector=_is_decimal, inferred_type=FieldTypes.DECIMAL),
+    FieldTypeDetector(detector=_is_boolean, inferred_type=FieldTypes.BOOLEAN),
 ]
 
 
-FIELD_TYPES_ORDER: list[FieldInferredType] = [
-    FieldInferredType.STRING,
-    FieldInferredType.DECIMAL,
-    FieldInferredType.INTEGER,
-    FieldInferredType.BOOLEAN,
+FIELD_TYPES_ORDER: list[FieldTypes] = [
+    FieldTypes.STRING,
+    FieldTypes.DECIMAL,
+    FieldTypes.INTEGER,
+    FieldTypes.BOOLEAN,
 ]
 
 
-def detect_field_type(value: str) -> FieldInferredType:
+def detect_field_type(value: str) -> FieldTypes:
     for field_type_detector in FIELD_TYPE_DETECTORS:
         if field_type_detector.detector(value):
             return field_type_detector.inferred_type
 
-    return FieldInferredType.STRING
+    return FieldTypes.STRING
 
 
-def validate_field_type(
-    value: str, field_type: FieldInferredType
-) -> tuple[bool, str] | None:
+def validate_field_type(value: str, field_type: FieldTypes) -> tuple[bool, str] | None:
     if field_type in FIELD_TYPE_VALIDATOR_MAP:
         stripped = value.strip()
 

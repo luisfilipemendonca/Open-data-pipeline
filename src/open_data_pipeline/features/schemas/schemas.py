@@ -3,7 +3,7 @@ from typing import Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from open_data_pipeline.features.imports.field_types import FieldInferredType
+from open_data_pipeline.features.imports.field_types import FieldTypes
 from open_data_pipeline.features.imports.schemas import (
     ImportPreviewField,
     ImportResponse,
@@ -16,7 +16,7 @@ from open_data_pipeline.features.schemas.validations import (
 
 class CreateSchemaFieldRequest(BaseModel):
     name: str
-    field_type: FieldInferredType
+    field_type: FieldTypes
     required: bool = False
     validations: list[CreateSchemaFieldValidation] | None = None
 
@@ -71,14 +71,14 @@ class CreateSchemaRequest(BaseModel):
 
 class SchemaFieldValidator(BaseModel):
     name: str
-    field_type: FieldInferredType
+    field_type: FieldTypes
     required: bool
 
 
 class SchemaFieldsResponse(BaseModel):
     id: int
     name: str
-    field_type: FieldInferredType
+    field_type: FieldTypes
     required: bool
 
 

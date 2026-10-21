@@ -3,7 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 from open_data_pipeline.features.imports.field_types import (
-    FieldInferredType,
+    FieldTypes,
 )
 
 
@@ -28,7 +28,7 @@ class ImportPreviewField(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    inferred_type: FieldInferredType
+    inferred_type: FieldTypes
     required: bool
 
 

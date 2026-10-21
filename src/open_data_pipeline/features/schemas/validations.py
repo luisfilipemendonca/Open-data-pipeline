@@ -5,7 +5,7 @@ from typing import TypedDict
 from pydantic import BaseModel
 
 from open_data_pipeline.features.imports.field_types import (
-    FieldInferredType,
+    FieldTypes,
 )
 
 
@@ -50,8 +50,8 @@ class FieldValidationConfig(TypedDict):
     validation_rules: Callable[[dict[str, int]], tuple[bool, str]]
 
 
-FIELD_TYPE_ALLOWED_VALIDATIONS: dict[FieldInferredType, FieldValidationConfig] = {
-    FieldInferredType.INTEGER: {
+FIELD_TYPE_ALLOWED_VALIDATIONS: dict[FieldTypes, FieldValidationConfig] = {
+    FieldTypes.INTEGER: {
         "validations": INTEGER_VALIDATIONS,
         "validation_rules": _integer_validation_rules,
     }
@@ -59,7 +59,7 @@ FIELD_TYPE_ALLOWED_VALIDATIONS: dict[FieldInferredType, FieldValidationConfig] =
 
 
 def validate_validations(
-    field_type: FieldInferredType, validations: list[CreateSchemaFieldValidation]
+    field_type: FieldTypes, validations: list[CreateSchemaFieldValidation]
 ) -> tuple[bool, str]:
     validations_dictionary: dict[str, int] = {}
 

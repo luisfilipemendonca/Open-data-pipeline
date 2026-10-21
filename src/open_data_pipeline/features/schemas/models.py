@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from open_data_pipeline.db.base import Base
-from open_data_pipeline.features.imports.field_types import FieldInferredType
+from open_data_pipeline.features.imports.field_types import FieldTypes
 
 if TYPE_CHECKING:
     from open_data_pipeline.features.imports.models import Import
@@ -80,8 +80,8 @@ class SchemaField(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    field_type: Mapped[FieldInferredType] = mapped_column(
-        "type", Enum(FieldInferredType, name="schema_field_type"), nullable=False
+    field_type: Mapped[FieldTypes] = mapped_column(
+        "type", Enum(FieldTypes, name="schema_field_type"), nullable=False
     )
     required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
