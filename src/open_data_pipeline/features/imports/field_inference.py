@@ -26,6 +26,10 @@ def infer_fields(
         field.name: set() for field in fields
     }
 
+    field_types_map: dict[str, dict[FieldTypes, int]] = {
+        field.name: {} for field in fields
+    }
+
     field_required_dict: dict[str, bool] = {
         field.name: field.required for field in fields
     }
@@ -43,6 +47,11 @@ def infer_fields(
                 inferred_type = detect_field_type(value)
                 field_types_set[field.name].add(inferred_type)
 
+                if inferred_type in field_types_map[field.name]:
+                    field_types_map[field.name][inferred_type] += 1
+                else:
+                    field_types_map[field.name][inferred_type] = 1
+
             field_required_dict[field.name] = (
                 field_required_dict[field.name] and value.strip() != ""
             )
@@ -54,9 +63,35 @@ def infer_fields(
             field_required_dict[field.name] if len(processed_rows) > 0 else False
         )
 
-        for inferred_type in FIELD_TYPES_ORDER:
-            if inferred_type in field_types_set[field.name]:
-                field.inferred_type = inferred_type
+        counter = 0
+
+        for field_type in field_types_set[field.name]:
+            if field_type in FIELD_TYPES_ORDER:
+                counter += 1
+            else:
+                counter = 0
                 break
+
+        if counter > 1:
+            for field_type_order in FIELD_TYPES_ORDER:
+                if field_type_order in field_types_set[field.name]:
+                    field.inferred_type = field_type_order
+                    break
+        else:
+            counts = field_types_map[field.name]
+
+            if not counts:
+                continue
+
+            top_counts = max(counts.values())
+
+            winners = [
+                field_type
+                for field_type, count in counts.items()
+                if count == top_counts
+            ]
+
+            if len(winners) == 1:
+                field.inferred_type = winners[0]
 
     return fields, processed_rows

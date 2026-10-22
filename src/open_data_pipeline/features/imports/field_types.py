@@ -1,8 +1,15 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 
 BOOL_VALUES = ("true", "false", "1", "0", "yes", "no")
+
+DATETIMES_FORMATS = {
+    "date": ["%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y"],
+    "time": ["%H:%M", "%H:%M:%S"],
+    "datetime": [],
+}
 
 
 def _is_unsigned_integer(value: str) -> bool:
@@ -43,6 +50,28 @@ def _is_string(value: str) -> bool:
     return True
 
 
+def _is_date(value: str) -> bool:
+    for date_format in DATETIMES_FORMATS["date"]:
+        try:
+            _ = datetime.strptime(value, date_format)
+            return True
+        except ValueError:
+            continue
+
+    return False
+
+
+def _is_time(value: str) -> bool:
+    for time_format in DATETIMES_FORMATS["time"]:
+        try:
+            _ = datetime.strptime(value, time_format)
+            return True
+        except ValueError:
+            continue
+
+    return False
+
+
 class FieldTypes(StrEnum):
     STRING = "string"
     INTEGER = "integer"
@@ -78,20 +107,26 @@ FIELD_TYPE_VALIDATOR_MAP: dict[FieldTypes, FieldTypeValidator] = {
     FieldTypes.STRING: FieldTypeValidator(
         validator=_is_string, error_message="Field is not of string type"
     ),
+    FieldTypes.DATE: FieldTypeValidator(
+        validator=_is_date, error_message="Field is not of date type"
+    ),
+    FieldTypes.TIME: FieldTypeValidator(
+        validator=_is_time, error_message=("Field is not of time type")
+    ),
 }
 
 FIELD_TYPE_DETECTORS: list[FieldTypeDetector] = [
     FieldTypeDetector(detector=_is_integer, inferred_type=FieldTypes.INTEGER),
     FieldTypeDetector(detector=_is_decimal, inferred_type=FieldTypes.DECIMAL),
     FieldTypeDetector(detector=_is_boolean, inferred_type=FieldTypes.BOOLEAN),
+    FieldTypeDetector(detector=_is_date, inferred_type=FieldTypes.DATE),
+    FieldTypeDetector(detector=_is_time, inferred_type=FieldTypes.TIME),
 ]
 
 
 FIELD_TYPES_ORDER: list[FieldTypes] = [
-    FieldTypes.STRING,
     FieldTypes.DECIMAL,
     FieldTypes.INTEGER,
-    FieldTypes.BOOLEAN,
 ]
 
 
