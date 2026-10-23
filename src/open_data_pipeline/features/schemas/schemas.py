@@ -73,6 +73,7 @@ class SchemaFieldValidator(BaseModel):
     name: str
     field_type: FieldTypes
     required: bool
+    validations: dict[str, int] | None
 
 
 class SchemaFieldsResponse(BaseModel):

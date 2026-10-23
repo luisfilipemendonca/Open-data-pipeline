@@ -74,7 +74,10 @@ def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse
         csv_rows = import_csv(file_path)
         schema_validator_fields = [
             SchemaFieldValidator(
-                name=field.name, field_type=field.field_type, required=field.required
+                name=field.name,
+                field_type=field.field_type,
+                required=field.required,
+                validations=field.validations,
             )
             for field in base_schema.fields
         ]
@@ -403,7 +406,10 @@ def update_import_row(
 
     schema_validator_fields = [
         SchemaFieldValidator(
-            name=field.name, field_type=field.field_type, required=field.required
+            name=field.name,
+            field_type=field.field_type,
+            required=field.required,
+            validations=field.validations,
         )
         for field in schema_fields
     ]

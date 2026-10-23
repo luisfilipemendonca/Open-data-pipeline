@@ -1,5 +1,6 @@
 import math
 from collections.abc import Callable
+from enum import StrEnum
 from typing import TypedDict
 
 from pydantic import BaseModel
@@ -14,7 +15,14 @@ class CreateSchemaFieldValidation(BaseModel):
     validation_value: int
 
 
-INTEGER_VALIDATIONS = ["gt", "gte", "lt", "lte"]
+class IntegerValidation(StrEnum):
+    GT = "gt"
+    GTE = "gte"
+    LT = "lt"
+    LTE = "lte"
+
+
+INTEGER_VALIDATIONS = [validation for validation in IntegerValidation]
 
 
 def _integer_validation_rules(validations: dict[str, int]) -> tuple[bool, str]:
@@ -46,7 +54,7 @@ def _integer_validation_rules(validations: dict[str, int]) -> tuple[bool, str]:
 
 
 class FieldValidationConfig(TypedDict):
-    validations: list[str]
+    validations: list[IntegerValidation]
     validation_rules: Callable[[dict[str, int]], tuple[bool, str]]
 
 
