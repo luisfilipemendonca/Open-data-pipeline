@@ -8,7 +8,18 @@ BOOL_VALUES = ("true", "false", "1", "0", "yes", "no")
 DATETIMES_FORMATS = {
     "date": ["%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y"],
     "time": ["%H:%M", "%H:%M:%S"],
-    "datetime": [],
+    "datetime": [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
+        "%d-%m-%Y %H:%M:%S",
+        "%d-%m-%Y %H:%M",
+        "%d/%m/%Y %H:%M:%S",
+        "%d/%m/%Y %H:%M",
+    ],
 }
 
 
@@ -72,6 +83,17 @@ def _is_time(value: str) -> bool:
     return False
 
 
+def _is_datetime(value: str) -> bool:
+    for datetime_format in DATETIMES_FORMATS["datetime"]:
+        try:
+            _ = datetime.strptime(value, datetime_format)
+            return True
+        except ValueError:
+            continue
+
+    return False
+
+
 class FieldTypes(StrEnum):
     STRING = "string"
     INTEGER = "integer"
@@ -113,6 +135,9 @@ FIELD_TYPE_VALIDATOR_MAP: dict[FieldTypes, FieldTypeValidator] = {
     FieldTypes.TIME: FieldTypeValidator(
         validator=_is_time, error_message=("Field is not of time type")
     ),
+    FieldTypes.DATETIME: FieldTypeValidator(
+        validator=_is_datetime, error_message="Field is not of datetime type"
+    ),
 }
 
 FIELD_TYPE_DETECTORS: list[FieldTypeDetector] = [
@@ -121,6 +146,7 @@ FIELD_TYPE_DETECTORS: list[FieldTypeDetector] = [
     FieldTypeDetector(detector=_is_boolean, inferred_type=FieldTypes.BOOLEAN),
     FieldTypeDetector(detector=_is_date, inferred_type=FieldTypes.DATE),
     FieldTypeDetector(detector=_is_time, inferred_type=FieldTypes.TIME),
+    FieldTypeDetector(detector=_is_datetime, inferred_type=FieldTypes.DATETIME),
 ]
 
 
