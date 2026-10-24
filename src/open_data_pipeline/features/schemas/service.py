@@ -6,18 +6,24 @@ from sqlalchemy.orm import Session, joinedload
 from open_data_pipeline.api.schemas import PaginatedResponse, PaginationResponse
 from open_data_pipeline.features.imports.schemas import ImportPreviewField
 from open_data_pipeline.features.schemas.exceptions import NotFoundSchemaException
-from open_data_pipeline.features.schemas.models import Schema, SchemaField
+from open_data_pipeline.features.schemas.models import (
+    Schema,
+    SchemaField,
+    SchemaFieldHistory,
+    SchemaHistory,
+)
 from open_data_pipeline.features.schemas.schemas import (
-    CreateSchemaRequest,
+    CreateSchemaPayload,
     DetailsSchemaResponse,
     GetSchemaResponse,
     OutdatedSchemaCopiesResponse,
     SchemaFieldsResponse,
     SchemaResponse,
+    UpdateSchemaPayload,
 )
 
 
-def create_schema(db: Session, payload: CreateSchemaRequest) -> SchemaResponse:
+def create_schema(db: Session, payload: CreateSchemaPayload) -> SchemaResponse:
     schema = Schema(
         name=payload.name,
         is_base=True,
@@ -199,4 +205,60 @@ def get_schema_outdated_copies(
             page_size=page_size,
             has_next_page=has_next_page,
         ),
+    )
+
+
+def update_schema(
+    db: Session, schema_id: int, payload: UpdateSchemaPayload
+) -> GetSchemaResponse:
+    schema = db.scalar(
+        select(Schema).where(Schema.id == schema_id).options(joinedload(Schema.fields))
+    )
+
+    if not schema or not schema.is_base:
+        raise NotFoundSchemaException()
+
+    db.add(
+        SchemaHistory(
+            schema_id=schema.id,
+            version=schema.version,
+            fields=[
+                SchemaFieldHistory(
+                    name=schema_field.name,
+                    field_type=schema_field.field_type,
+                    required=schema_field.required,
+                    validations=schema_field.validations,
+                )
+                for schema_field in schema.fields
+            ],
+        )
+    )
+
+    schema.fields.clear()
+
+    schema.name = payload.name
+    schema.version = schema.version + 1
+    schema.fields = [
+        SchemaField(
+            name=payload_field.name,
+            field_type=payload_field.field_type,
+            required=payload_field.required,
+            validations={
+                validation.validation_type: validation.validation_value
+                for validation in payload_field.validations
+            }
+            if payload_field.validations
+            else None,
+        )
+        for payload_field in payload.fields
+    ]
+
+    db.commit()
+
+    return GetSchemaResponse(
+        id=schema.id,
+        name=schema.name or "",
+        version=schema.version,
+        created_at=schema.created_at,
+        updated_at=schema.updated_at,
     )

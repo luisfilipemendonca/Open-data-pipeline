@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Self, TypedDict
+from typing import Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -14,7 +14,7 @@ from open_data_pipeline.features.schemas.validations import (
 )
 
 
-class CreateSchemaFieldRequest(BaseModel):
+class CreateSchemaFieldPayload(BaseModel):
     name: str
     field_type: FieldTypes
     required: bool = False
@@ -45,9 +45,9 @@ class CreateSchemaFieldRequest(BaseModel):
         return self
 
 
-class CreateSchemaRequest(BaseModel):
+class CreateSchemaPayload(BaseModel):
     name: str
-    fields: list[CreateSchemaFieldRequest] = Field(min_length=1)
+    fields: list[CreateSchemaFieldPayload] = Field(min_length=1)
 
     @field_validator("name")
     @classmethod
@@ -121,3 +121,6 @@ class OutdatedSchemaCopiesResponse(BaseModel):
     updated_at: datetime
     import_id: int | None
     import_file_name: str | None
+
+
+class UpdateSchemaPayload(CreateSchemaPayload): ...

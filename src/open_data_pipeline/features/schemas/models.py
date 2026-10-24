@@ -36,7 +36,7 @@ class Schema(Base):
     )
 
     def __repr__(self) -> str:
-        return f"schema_id: {self.id} - schema_name: {self.name}\n"
+        return f"schema_id: {self.id}\n schema_name: {self.name}\n schema_fields: {self.fields}\n"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     parent_schema_id: Mapped[int | None] = mapped_column(
@@ -48,7 +48,7 @@ class Schema(Base):
     name: Mapped[str | None] = mapped_column(String, nullable=True)
 
     fields: Mapped[list["SchemaField"]] = relationship(
-        back_populates="schema", passive_deletes=True
+        back_populates="schema", passive_deletes=True, cascade="all, delete-orphan"
     )
 
     history: Mapped[list["SchemaHistory"]] = relationship(
