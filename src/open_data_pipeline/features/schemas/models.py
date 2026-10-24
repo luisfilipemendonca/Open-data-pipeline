@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import (
     Boolean,
@@ -51,6 +51,10 @@ class Schema(Base):
         back_populates="schema", passive_deletes=True
     )
 
+    history: Mapped[list["SchemaHistory"]] = relationship(
+        back_populates="schema", passive_deletes=True
+    )
+
     import_record: Mapped["Import | None"] = relationship(
         back_populates="schema", uselist=False
     )
@@ -88,3 +92,33 @@ class SchemaField(Base):
     schema: Mapped["Schema"] = relationship(back_populates="fields")
 
     validations: Mapped[dict[str, int] | None] = mapped_column(JSONB, nullable=True)
+
+
+class SchemaFieldHistory(TypedDict):
+    name: str
+    field_type: FieldTypes
+    required: bool
+    validations: dict[str, int] | None
+
+
+class SchemaHistory(Base):
+    __tablename__: str = "schemas_history"
+    __table_args__ = (
+        UniqueConstraint(
+            "schema_id", "version", name="uq_schema_history_schema_id_version"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    schema_id: Mapped[int] = mapped_column(
+        ForeignKey(column="schemas.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    fields: Mapped[list[SchemaFieldHistory]] = mapped_column(JSONB, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    schema: Mapped["Schema"] = relationship(back_populates="history")
