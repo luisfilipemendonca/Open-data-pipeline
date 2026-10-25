@@ -33,6 +33,7 @@ from open_data_pipeline.features.imports.service import (
     import_data_preview,
     process_import,
     update_import_row,
+    update_import_schema_version,
 )
 
 router = APIRouter(prefix="/imports", tags=["imports"])
@@ -126,3 +127,10 @@ def delete_import_row_endpoint(
     db: DbDep, import_id: Annotated[int, Path(ge=1)], row_id: Annotated[int, Path(ge=1)]
 ) -> None:
     delete_import_row(db=db, import_id=import_id, row_id=row_id)
+
+
+@router.post("/{import_id}/schema", response_model=ImportResponse)
+def update_import_schema_version_endpoint(
+    db: DbDep, import_id: Annotated[int, Path(ge=1)]
+) -> ImportResponse:
+    return update_import_schema_version(db=db, import_id=import_id)

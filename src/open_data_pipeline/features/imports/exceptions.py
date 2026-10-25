@@ -18,6 +18,10 @@ IMPORT_SCHEMA_HEADERS_MISMATCH = "Schema fields don't match file headers"
 IMPORT_ROW_NOT_FOUND_EXCEPTION = "Import row not found"
 IMPORT_ROW_FIELDS_MISMATCH_SCHEMA_EXCEPTION = "Import row fields mismatch the schema"
 IMPORT_SCHEMA_NOT_FOUND = "Import schema not found"
+IMPORT_SCHEMA_UPDATE_NOT_BASE_EXCEPTION = (
+    "Import schema cannot be updated because it's not a base schema"
+)
+IMPORT_SCHEMA_ALREADY_UPDATED_EXCEPTION = "Import schema is already in the last version"
 
 
 class InvalidFileException(AppException):
@@ -85,3 +89,13 @@ class ImportRowValidationException(Exception):
 class ImportSchemaNotFoundException(AppException):
     status_code: HTTPStatus = HTTPStatus.NOT_FOUND
     detail: str = IMPORT_SCHEMA_NOT_FOUND
+
+
+class ImportSchemaUpdateNotBaseException(AppException):
+    status_code: HTTPStatus = HTTPStatus.CONFLICT
+    detail: str = IMPORT_SCHEMA_UPDATE_NOT_BASE_EXCEPTION
+
+
+class ImportSchemaAlreadyUpdatedException(AppException):
+    status_code: HTTPStatus = HTTPStatus.CONFLICT
+    detail: str = IMPORT_SCHEMA_ALREADY_UPDATED_EXCEPTION

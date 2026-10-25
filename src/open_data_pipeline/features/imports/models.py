@@ -23,7 +23,7 @@ class Import(Base):
     __tablename__: str = "imports"
 
     def __repr__(self) -> str:
-        return f"file_name: {self.file_name}\n schema: {self.schema}\n"
+        return f"import_id: {self.id}\nimport_file_name: {self.file_name}\nschema:\n{self.schema}"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     status: Mapped[ImportStatus] = mapped_column(

@@ -236,6 +236,8 @@ def update_schema(
 
     schema.fields.clear()
 
+    db.flush()
+
     schema.name = payload.name
     schema.version = schema.version + 1
     schema.fields = [

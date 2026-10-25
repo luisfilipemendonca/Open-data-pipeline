@@ -56,12 +56,20 @@ FIELD_VALUE_VALIDATION_VALIDATORS: dict[
 
 
 def validate_row_fields(
-    row: dict[str, str], fields: list[SchemaFieldValidator]
+    row: dict[str, str],
+    fields: list[SchemaFieldValidator],
+    allow_missing_columns: bool = False,
 ) -> ValidationResult:
     errors: list[ImportRowError] = []
 
     for field in fields:
-        stripped = row[field.name].strip()
+        if not field.name in row and field.required and allow_missing_columns:
+            errors.append(
+                ImportRowError(column=field.name, reason="Missing column in import")
+            )
+            continue
+
+        stripped = row.get(field.name, "").strip()
 
         if not field.required and not stripped:
             continue

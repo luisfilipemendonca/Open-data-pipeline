@@ -36,7 +36,7 @@ class Schema(Base):
     )
 
     def __repr__(self) -> str:
-        return f"schema_id: {self.id}\n schema_name: {self.name}\n schema_fields: {self.fields}\n"
+        return f"schema_id: {self.id}\nschema_name: {self.name}\nschema_fields: {self.fields}\n"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     parent_schema_id: Mapped[int | None] = mapped_column(

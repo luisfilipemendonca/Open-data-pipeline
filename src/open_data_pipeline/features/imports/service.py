@@ -22,8 +22,10 @@ from open_data_pipeline.features.imports.exceptions import (
     ImportRowFieldsMismatchSchemaException,
     ImportRowNotFoundException,
     ImportRowValidationException,
+    ImportSchemaAlreadyUpdatedException,
     ImportSchemaHeadersMismatchException,
     ImportSchemaNotFoundException,
+    ImportSchemaUpdateNotBaseException,
     InvalidFileDuplicatedHeaderException,
     InvalidFileException,
     InvalidFileHeadersException,
@@ -488,3 +490,96 @@ def delete_import_row(db: Session, import_id: int, row_id: int) -> None:
 
     db.delete(import_row)
     db.commit()
+
+
+def update_import_schema_version(db: Session, import_id: int) -> ImportResponse:
+    import_record = db.scalar(
+        select(Import).where(Import.id == import_id).options(joinedload(Import.schema))
+    )
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    if not import_record.schema:
+        raise NotFoundSchemaException()
+
+    import_schema = import_record.schema
+
+    if not import_schema.parent_schema_id:
+        raise ImportSchemaUpdateNotBaseException()
+
+    base_schema = db.scalar(
+        select(Schema)
+        .where(Schema.id == import_schema.parent_schema_id)
+        .options(joinedload(Schema.fields))
+    )
+
+    if not base_schema:
+        raise NotFoundSchemaException()
+
+    if import_schema.parent_version == base_schema.version:
+        raise ImportSchemaAlreadyUpdatedException()
+
+    import_rows = (
+        db.scalars(select(ImportRow).where(ImportRow.import_id == import_record.id))
+        .unique()
+        .all()
+    )
+
+    import_schema.fields.clear()
+
+    db.flush()
+
+    import_schema.fields = [
+        SchemaField(
+            name=payload_field.name,
+            field_type=payload_field.field_type,
+            required=payload_field.required,
+            validations=payload_field.validations,
+        )
+        for payload_field in base_schema.fields
+    ]
+
+    schema_validator_fields = [
+        SchemaFieldValidator(
+            name=field.name,
+            field_type=field.field_type,
+            required=field.required,
+            validations=field.validations,
+        )
+        for field in base_schema.fields
+    ]
+
+    is_schema_valid = True
+
+    if len(import_rows):
+        for import_row in import_rows:
+            is_valid, errors = validate_row_fields(
+                row=import_row.data,
+                fields=schema_validator_fields,
+                allow_missing_columns=True,
+            )
+
+            if errors:
+                is_schema_valid = False
+
+            import_row.is_valid = is_valid
+            import_row.errors = [error.model_dump() for error in errors]
+
+    import_record.status = (
+        ImportStatus.COMPLETED
+        if is_schema_valid
+        else ImportStatus.COMPLETED_WITH_ERRORS
+    )
+
+    import_schema.version = import_schema.version + 1
+    import_schema.parent_version = base_schema.version
+
+    db.commit()
+
+    return ImportResponse(
+        import_id=import_record.id,
+        status=import_record.status,
+        download_url=f"/api/imports/{import_record.id}/download",
+        file_name=import_record.file_name,
+    )
