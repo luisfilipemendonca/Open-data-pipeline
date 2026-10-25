@@ -44,7 +44,10 @@ from open_data_pipeline.features.imports.schemas import (
 from open_data_pipeline.features.imports.validator import validate_row_fields
 from open_data_pipeline.features.schemas.exceptions import NotFoundSchemaException
 from open_data_pipeline.features.schemas.models import SchemaField
-from open_data_pipeline.features.schemas.schemas import SchemaFieldValidator
+from open_data_pipeline.features.schemas.schemas import (
+    CreateSchemaImportConfirmPayload,
+    SchemaFieldValidator,
+)
 
 
 def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse:
@@ -119,6 +122,7 @@ def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse
                     name=field.name,
                     field_type=field.field_type,
                     required=field.required,
+                    validations=field.validations,
                 )
                 for field in base_schema.fields
             ],
@@ -583,6 +587,111 @@ def update_import_schema_version(db: Session, import_id: int) -> ImportResponse:
     import_schema.parent_version = base_schema.version
 
     db.commit()
+
+    return ImportResponse(
+        import_id=import_record.id,
+        status=import_record.status,
+        download_url=f"/api/imports/{import_record.id}/download",
+        file_name=import_record.file_name,
+    )
+
+
+def confirm_import(
+    db: Session, import_id: int, payload: CreateSchemaImportConfirmPayload
+) -> ImportResponse:
+    import_record = db.scalar(
+        select(Import).where(Import.id == import_id).options(joinedload(Import.rows))
+    )
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    if import_record.status != ImportStatus.PENDING or import_record.rows:
+        raise ImportAlreadyProcessedException()
+
+    file_path = resolve_import_file_path(file_key=import_record.file_key)
+
+    if not file_path:
+        raise ImportNotFoundException()
+
+    csv_headers = read_csv_headers(file_path=file_path)
+    schema_fields_names = [field.name for field in payload.fields]
+
+    if len(csv_headers) != len(schema_fields_names):
+        raise ImportSchemaHeadersMismatchException()
+
+    for field in schema_fields_names:
+        if not field in csv_headers:
+            raise ImportSchemaHeadersMismatchException()
+
+    csv_rows = import_csv(file_path)
+    schema_validator_fields = [
+        SchemaFieldValidator(
+            name=field.name,
+            field_type=field.field_type,
+            required=field.required,
+            validations={
+                validation.validation_type: validation.validation_value
+                for validation in field.validations
+            }
+            if field.validations
+            else None,
+        )
+        for field in payload.fields
+    ]
+
+    rows: list[ImportRow] = []
+    is_import_valid = True
+
+    for index, csv_row in enumerate(csv_rows):
+        if index >= CSV_MAX_ROWS_SIZE - 1:
+            raise ImportFileTooBigException()
+
+        processed_csv_row = {
+            key: value for key, value in csv_row.items() if key and key.strip()
+        }
+
+        is_valid, errors = validate_row_fields(
+            row=processed_csv_row, fields=schema_validator_fields
+        )
+
+        if not is_valid:
+            is_import_valid = False
+
+        rows.append(
+            ImportRow(
+                row_number=index + 1,
+                data=processed_csv_row,
+                is_valid=is_valid,
+                errors=[error.model_dump() for error in errors],
+            )
+        )
+
+    import_record.status = (
+        ImportStatus.COMPLETED
+        if is_import_valid
+        else ImportStatus.COMPLETED_WITH_ERRORS
+    )
+    import_record.rows = rows
+    import_record.schema = Schema(
+        fields=[
+            SchemaField(
+                name=field.name,
+                field_type=field.field_type,
+                required=field.required,
+                validations={
+                    validation.validation_type: validation.validation_value
+                    for validation in field.validations
+                }
+                if field.validations
+                else None,
+            )
+            for field in payload.fields
+        ],
+    )
+
+    db.commit()
+    db.refresh(import_record)
 
     return ImportResponse(
         import_id=import_record.id,

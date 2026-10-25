@@ -24,6 +24,7 @@ from open_data_pipeline.features.imports.schemas import (
     UpdateImportRowBody,
 )
 from open_data_pipeline.features.imports.service import (
+    confirm_import,
     delete_import,
     delete_import_row,
     download_import_file,
@@ -35,6 +36,7 @@ from open_data_pipeline.features.imports.service import (
     update_import_row,
     update_import_schema_version,
 )
+from open_data_pipeline.features.schemas.schemas import CreateSchemaImportConfirmPayload
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -134,3 +136,12 @@ def update_import_schema_version_endpoint(
     db: DbDep, import_id: Annotated[int, Path(ge=1)]
 ) -> ImportResponse:
     return update_import_schema_version(db=db, import_id=import_id)
+
+
+@router.post("/{import_id}/confirm", response_model=ImportResponse)
+def confirm_import_endpoint(
+    db: DbDep,
+    import_id: Annotated[int, Path(ge=1)],
+    payload: CreateSchemaImportConfirmPayload,
+) -> ImportResponse:
+    return confirm_import(db=db, import_id=import_id, payload=payload)

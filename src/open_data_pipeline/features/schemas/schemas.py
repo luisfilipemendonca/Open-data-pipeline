@@ -45,9 +45,24 @@ class CreateSchemaFieldPayload(BaseModel):
         return self
 
 
-class CreateSchemaPayload(BaseModel):
-    name: str
+class CreateSchemaBase(BaseModel):
     fields: list[CreateSchemaFieldPayload] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def field_names_must_be_unique(self) -> Self:
+        names = [field.name for field in self.fields]
+
+        if len(names) != len(set(names)):
+            raise ValueError("Field names must be unique")
+
+        return self
+
+
+class CreateSchemaImportConfirmPayload(CreateSchemaBase): ...
+
+
+class CreateSchemaPayload(CreateSchemaBase):
+    name: str
 
     @field_validator("name")
     @classmethod
@@ -58,15 +73,6 @@ class CreateSchemaPayload(BaseModel):
             raise ValueError("Schema name cannot be empty")
 
         return stripped
-
-    @model_validator(mode="after")
-    def field_names_must_be_unique(self) -> Self:
-        names = [field.name for field in self.fields]
-
-        if len(names) != len(set(names)):
-            raise ValueError("Field names must be unique")
-
-        return self
 
 
 class SchemaFieldValidator(BaseModel):
