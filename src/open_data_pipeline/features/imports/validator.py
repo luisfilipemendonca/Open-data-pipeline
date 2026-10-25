@@ -65,7 +65,9 @@ def validate_row_fields(
     for field in fields:
         if not field.name in row and field.required and allow_missing_columns:
             errors.append(
-                ImportRowError(column=field.name, reason="Missing column in import")
+                ImportRowError(
+                    column=field.name, reason="Column added after this row was imported"
+                )
             )
             continue
 

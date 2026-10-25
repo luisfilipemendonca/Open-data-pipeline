@@ -308,10 +308,21 @@ def process_import(db: Session, import_id: int) -> ImportResponse:
 def get_import_rows(
     db: Session, import_id: int, page: int, page_size: int, is_valid: bool | None
 ) -> PaginatedResponse[ImportRowResponse]:
-    import_record = db.get(Import, import_id)
+    import_record = db.scalar(
+        select(Import)
+        .where(Import.id == import_id)
+        .options(joinedload(Import.schema).joinedload(Schema.fields))
+    )
 
     if not import_record:
         raise ImportNotFoundException()
+
+    import_schema = import_record.schema
+
+    if not import_schema:
+        raise NotFoundSchemaException()
+
+    import_schema_fields = import_schema.fields
 
     conditions = [ImportRow.import_id == import_id]
 
@@ -338,19 +349,15 @@ def get_import_rows(
         import_data.append([])
 
     for index, row in enumerate(import_rows):
-        for column, value in row.data.items():
-            if not column:
-                # empty values are being stored, need to inspect the import
-                continue
-
+        for field in import_schema_fields:
             column_error = next(
-                (error for error in row.errors if error["column"] == column), None
+                (error for error in row.errors if error["column"] == field.name), None
             )
 
             import_data[index].append(
                 ImportRowDataResponse(
-                    column=column,
-                    value=value,
+                    column=field.name,
+                    value=row.data.get(field.name, ""),
                     error=column_error["reason"] if column_error else None,
                 )
             )
