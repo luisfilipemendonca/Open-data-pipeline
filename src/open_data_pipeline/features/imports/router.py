@@ -18,6 +18,7 @@ from open_data_pipeline.features.imports.exceptions import (
     ImportRowValidationException,
 )
 from open_data_pipeline.features.imports.schemas import (
+    ImportDetailsResponse,
     ImportPreviewResponse,
     ImportResponse,
     ImportRowResponse,
@@ -28,6 +29,7 @@ from open_data_pipeline.features.imports.service import (
     delete_import,
     delete_import_row,
     download_import_file,
+    get_import_details,
     get_import_rows,
     get_imports,
     import_data,
@@ -88,6 +90,13 @@ def process_import_endpoint(
     db: DbDep, import_id: Annotated[int, Path(ge=1)]
 ) -> ImportResponse:
     return process_import(db=db, import_id=import_id)
+
+
+@router.get("/{import_id}", response_model=ImportDetailsResponse)
+def get_import_details_endpoint(
+    db: DbDep, import_id: Annotated[int, Path(ge=1)]
+) -> ImportDetailsResponse:
+    return get_import_details(db=db, import_id=import_id)
 
 
 @router.get("/{import_id}/rows", response_model=PaginatedResponse[ImportRowResponse])

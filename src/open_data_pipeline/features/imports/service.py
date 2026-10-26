@@ -34,10 +34,13 @@ from open_data_pipeline.features.imports.field_inference import infer_fields
 from open_data_pipeline.features.imports.file_validator import validate_file
 from open_data_pipeline.features.imports.models import Import, ImportRow, Schema
 from open_data_pipeline.features.imports.schemas import (
+    ImportDetailsResponse,
     ImportPreviewResponse,
     ImportResponse,
     ImportRowDataResponse,
     ImportRowResponse,
+    ImportRowsErrorsSummary,
+    ImportRowsFieldErrorsSummary,
     ImportStatus,
     UpdateImportRowBody,
 )
@@ -255,6 +258,55 @@ def get_imports(
             total_pages=total_pages,
             has_next_page=has_next_page,
             total=import_records_count,
+        ),
+    )
+
+
+def get_import_details(db: Session, import_id: int) -> ImportDetailsResponse:
+    import_record = db.scalar(
+        select(Import)
+        .where(Import.id == import_id)
+        .options(joinedload(Import.schema))
+        .options(joinedload(Import.rows.and_(ImportRow.is_valid.is_(False))))
+    )
+
+    if not import_record:
+        raise ImportNotFoundException()
+
+    import_rows_errors = len(import_record.rows)
+
+    import_rows_errors_summary: dict[str, ImportRowsFieldErrorsSummary] = {}
+
+    for row in import_record.rows:
+        if not row.errors:
+            continue
+
+        for error in row.errors:
+            column = error.get("column")
+            reason = error.get("reason")
+
+            if not reason or not column:
+                continue
+
+            if not column in import_rows_errors_summary:
+                import_rows_errors_summary[column] = ImportRowsFieldErrorsSummary(
+                    field=column, count=1, reasons=[reason]
+                )
+            else:
+                import_rows_errors_summary[column].count += 1
+
+                if not reason in import_rows_errors_summary[column].reasons:
+                    import_rows_errors_summary[column].reasons.append(reason)
+
+    return ImportDetailsResponse(
+        import_id=import_record.id,
+        status=import_record.status,
+        download_url=f"/api/imports/{import_record.id}/download",
+        file_name=import_record.file_name,
+        schema_name=import_record.schema.name if import_record.schema else None,
+        summary=ImportRowsErrorsSummary(
+            count=import_rows_errors,
+            fields=[row_errors for row_errors in import_rows_errors_summary.values()],
         ),
     )
 

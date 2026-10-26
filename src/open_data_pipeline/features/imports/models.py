@@ -64,7 +64,7 @@ class ImportRow(Base):
     )
 
     def __repr__(self) -> str:
-        return f"row_number: {self.row_number}\n data: {self.data}\n import: {self.import_record}\n"
+        return f"row_number: {self.row_number}\n data: {self.data}\n erros: {self.errors}\n"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     import_id: Mapped[int] = mapped_column(

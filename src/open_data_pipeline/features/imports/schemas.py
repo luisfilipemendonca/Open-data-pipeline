@@ -61,3 +61,19 @@ class ImportRowResponse(BaseModel):
 class UpdateImportRowBody(BaseModel):
     column: str
     value: str
+
+
+class ImportRowsFieldErrorsSummary(BaseModel):
+    field: str
+    count: int
+    reasons: list[str]
+
+
+class ImportRowsErrorsSummary(BaseModel):
+    count: int
+    fields: list[ImportRowsFieldErrorsSummary]
+
+
+class ImportDetailsResponse(ImportResponse):
+    schema_name: str | None
+    summary: ImportRowsErrorsSummary
