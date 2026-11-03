@@ -8,6 +8,7 @@ from open_data_pipeline.features.schemas.schemas import (
     CreateSchemaPayload,
     DetailsSchemaResponse,
     GetSchemaResponse,
+    GetSchemasOptionsResponse,
     OutdatedSchemaCopiesResponse,
     SchemaResponse,
     UpdateSchemaPayload,
@@ -17,6 +18,7 @@ from open_data_pipeline.features.schemas.service import (
     get_schema_details,
     get_schema_outdated_copies,
     get_schemas,
+    get_schemas_options,
     update_schema,
 )
 
@@ -34,6 +36,11 @@ def get_schemas_endpoint(
     db: DbDep,
 ) -> PaginatedResponse[GetSchemaResponse]:
     return get_schemas(db=db, page=pagination.page, page_size=pagination.page_size)
+
+
+@router.get("/options", response_model=GetSchemasOptionsResponse)
+def get_schemas_options_endpoint(db: DbDep) -> GetSchemasOptionsResponse:
+    return get_schemas_options(db=db)
 
 
 @router.get("/{schema_id}", response_model=DetailsSchemaResponse)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
@@ -22,6 +23,8 @@ class ImportResponse(BaseModel):
     status: ImportStatus
     download_url: str
     file_name: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class ImportPreviewField(BaseModel):

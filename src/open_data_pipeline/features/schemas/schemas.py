@@ -110,6 +110,16 @@ class GetSchemaResponse(BaseModel):
     updated_at: datetime
 
 
+class GetSchemaOptionResponse(BaseModel):
+    id: int
+    value: int
+    label: str
+
+
+class GetSchemasOptionsResponse(BaseModel):
+    data: list[GetSchemaOptionResponse]
+
+
 class DetailsSchemaResponse(BaseModel):
     id: int
     name: str

@@ -150,6 +150,8 @@ def import_data(file: UploadFile, db: Session, schema_id: int) -> ImportResponse
             status=import_record.status,
             download_url=f"/api/imports/{import_record.id}/download",
             file_name=import_record.file_name,
+            created_at=import_record.created_at,
+            updated_at=import_record.updated_at,
         )
     except Exception:
         file_path.unlink(missing_ok=True)
@@ -249,6 +251,8 @@ def get_imports(
                 status=import_record.status,
                 download_url=f"/api/imports/{import_record.id}/download",
                 file_name=import_record.file_name,
+                created_at=import_record.created_at,
+                updated_at=import_record.updated_at,
             )
             for import_record in import_records
         ],
@@ -303,6 +307,8 @@ def get_import_details(db: Session, import_id: int) -> ImportDetailsResponse:
         status=import_record.status,
         download_url=f"/api/imports/{import_record.id}/download",
         file_name=import_record.file_name,
+        created_at=import_record.created_at,
+        updated_at=import_record.updated_at,
         schema_name=import_record.schema.name if import_record.schema else None,
         summary=ImportRowsErrorsSummary(
             count=import_rows_errors,
@@ -358,6 +364,8 @@ def process_import(db: Session, import_id: int) -> ImportResponse:
         status=import_record.status,
         download_url=f"/api/imports/{import_record.id}/download",
         file_name=import_record.file_name,
+        created_at=import_record.created_at,
+        updated_at=import_record.updated_at,
     )
 
 
@@ -645,6 +653,8 @@ def update_import_schema_version(db: Session, import_id: int) -> ImportResponse:
         status=import_record.status,
         download_url=f"/api/imports/{import_record.id}/download",
         file_name=import_record.file_name,
+        created_at=import_record.created_at,
+        updated_at=import_record.updated_at,
     )
 
 
@@ -750,4 +760,6 @@ def confirm_import(
         status=import_record.status,
         download_url=f"/api/imports/{import_record.id}/download",
         file_name=import_record.file_name,
+        created_at=import_record.created_at,
+        updated_at=import_record.updated_at,
     )

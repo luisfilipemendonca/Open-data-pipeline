@@ -15,7 +15,9 @@ from open_data_pipeline.features.schemas.models import (
 from open_data_pipeline.features.schemas.schemas import (
     CreateSchemaPayload,
     DetailsSchemaResponse,
+    GetSchemaOptionResponse,
     GetSchemaResponse,
+    GetSchemasOptionsResponse,
     OutdatedSchemaCopiesResponse,
     SchemaFieldsResponse,
     SchemaResponse,
@@ -107,6 +109,19 @@ def get_schemas(
             total=schemas_count,
             total_pages=total_pages,
         ),
+    )
+
+
+def get_schemas_options(db: Session) -> GetSchemasOptionsResponse:
+    schemas = db.scalars(select(Schema).where(Schema.is_base)).all()
+
+    return GetSchemasOptionsResponse(
+        data=[
+            GetSchemaOptionResponse(
+                id=schema.id, value=schema.id, label=schema.name or ""
+            )
+            for schema in schemas
+        ]
     )
 
 
