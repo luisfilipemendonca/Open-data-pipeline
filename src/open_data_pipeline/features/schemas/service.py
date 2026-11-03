@@ -118,7 +118,7 @@ def get_schemas_options(db: Session) -> GetSchemasOptionsResponse:
     return GetSchemasOptionsResponse(
         data=[
             GetSchemaOptionResponse(
-                id=schema.id, value=schema.id, label=schema.name or ""
+                id=schema.id, value=str(schema.id), label=schema.name or ""
             )
             for schema in schemas
         ]

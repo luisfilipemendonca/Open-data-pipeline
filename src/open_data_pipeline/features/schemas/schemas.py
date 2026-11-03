@@ -112,7 +112,7 @@ class GetSchemaResponse(BaseModel):
 
 class GetSchemaOptionResponse(BaseModel):
     id: int
-    value: int
+    value: str
     label: str
 
 
