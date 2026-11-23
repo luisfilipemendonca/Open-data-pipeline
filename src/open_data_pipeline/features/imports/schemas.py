@@ -72,11 +72,13 @@ class ImportRowsFieldErrorsSummary(BaseModel):
     reasons: list[str]
 
 
-class ImportRowsErrorsSummary(BaseModel):
-    count: int
-    fields: list[ImportRowsFieldErrorsSummary]
+class ImportRowsSummary(BaseModel):
+    total_rows: int
+    total_valid_rows: int
+    total_invalid_rows: int
+    errors: list[ImportRowsFieldErrorsSummary]
 
 
 class ImportDetailsResponse(ImportResponse):
     schema_name: str | None
-    summary: ImportRowsErrorsSummary
+    summary: ImportRowsSummary

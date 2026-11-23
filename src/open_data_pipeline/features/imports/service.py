@@ -39,8 +39,8 @@ from open_data_pipeline.features.imports.schemas import (
     ImportResponse,
     ImportRowDataResponse,
     ImportRowResponse,
-    ImportRowsErrorsSummary,
     ImportRowsFieldErrorsSummary,
+    ImportRowsSummary,
     ImportStatus,
     UpdateImportRowBody,
 )
@@ -277,6 +277,15 @@ def get_import_details(db: Session, import_id: int) -> ImportDetailsResponse:
     if not import_record:
         raise ImportNotFoundException()
 
+    total_rows = (
+        db.scalar(
+            select(func.count())
+            .select_from(ImportRow)
+            .where(ImportRow.import_id == import_id)
+        )
+        or 0
+    )
+
     import_rows_errors = len(import_record.rows)
 
     import_rows_errors_summary: dict[str, ImportRowsFieldErrorsSummary] = {}
@@ -310,9 +319,11 @@ def get_import_details(db: Session, import_id: int) -> ImportDetailsResponse:
         created_at=import_record.created_at,
         updated_at=import_record.updated_at,
         schema_name=import_record.schema.name if import_record.schema else None,
-        summary=ImportRowsErrorsSummary(
-            count=import_rows_errors,
-            fields=[row_errors for row_errors in import_rows_errors_summary.values()],
+        summary=ImportRowsSummary(
+            total_rows=total_rows,
+            total_valid_rows=total_rows - import_rows_errors,
+            total_invalid_rows=import_rows_errors,
+            errors=[row_errors for row_errors in import_rows_errors_summary.values()],
         ),
     )
 
